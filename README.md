@@ -12,6 +12,7 @@ Welcome to our project from NOVA SBE! We hope you enjoy.
 ## Repository Structure
 This repository follows a structured format:
 
+'''text
 Group_F/
 |── Project/               # 
 |── Part1.md/              # Desciption of Part 1 assigment    
@@ -23,6 +24,7 @@ Group_F/
 │── README.md/             # Project documentation (this file)
 │── Licence/               # 
 │── main.py                #
+'''
 
 ## License
 
