@@ -12,20 +12,18 @@ Welcome to our project from NOVA SBE! We hope you enjoy.
 ## Repository Structure
 This repository follows a structured format:
 
-Group_F
-|── Project                # 
-    |── Part1.md           # Desciption of Part 1 assigment    
-│── app/ 
+```bash
+Group_F/
+|── Project/               # 
+|── Part1.md/              # Desciption of Part 1 assigment    
+│── app/                   # 
 |── downloads/             # Directory for dataset downloads
 │── notebooks/             # Jupyter notebooks for prototyping
-│── test/
-│── src/                   # Main Python scripts and class implementation
 │── tests/                 # Unit tests using pytest
-│── .gitignore             # Ignore unnecessary files
-│── README.md              # Project documentation (this file)
-│── requirements.txt       # Dependencies for the project
-│──        # Streamlit interface for visualization
-
+│── .gitignore/            # Ignore unnecessary files
+│── README.md/             # Project documentation (this file)
+│── Licence/               # 
+│── main.py                #
 
 ## License
 
