@@ -12,7 +12,6 @@ Welcome to our project from NOVA SBE! We hope you enjoy.
 ## Repository Structure
 This repository follows a structured format:
 
-```bash
 Group_F/
 |── Project/               # 
 |── Part1.md/              # Desciption of Part 1 assigment    
