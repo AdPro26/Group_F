@@ -15,7 +15,7 @@ This repository follows a structured format:
 '''text
 Group_F/
 |── Project/               # 
-|── Part1.md/              # Desciption of Part 1 assigment    
+|   |── Part1.md/          # Desciption of Part 1 assigment    
 │── app/                   # 
 |── downloads/             # Directory for dataset downloads
 │── notebooks/             # Jupyter notebooks for prototyping
@@ -23,7 +23,7 @@ Group_F/
 │── .gitignore/            # Ignore unnecessary files
 │── README.md/             # Project documentation (this file)
 │── Licence/               # 
-│── main.py                #
+└── main.py               #
 '''
 
 ## License
