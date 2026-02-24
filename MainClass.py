@@ -48,8 +48,10 @@ metadata_list = []
 
 for i, (data_url, metadata_url) in enumerate(zip(data_urls, metadata_urls)):
 
-    data_path = download_dir / f"data_{i}.csv"
-    metadata_path = download_dir / f"metadata_{i}.json"
+
+
+    data_path = download_dir / data_url.split("?")[0].split('/')[-1]
+    metadata_path = download_dir / metadata_url.split("?")[0].split('/')[-1]    
 
     # Download only if files do not exist
     if not data_path.exists():
