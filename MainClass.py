@@ -3,6 +3,8 @@ import requests
 import os
 import json
 from pathlib import Path
+import zipfile
+import geopandas as gpd
 
 data_urls = [
     "https://ourworldindata.org/grapher/annual-change-forest-area.csv?v=1&csvType=full&useColumnShortNames=true",
@@ -73,3 +75,18 @@ for i, (data_url, metadata_url) in enumerate(zip(data_urls, metadata_urls)):
     metadata_list.append(metadata)
 
 print("All datasets loaded successfully.")
+
+shapefile_url = "https://naturalearth.s3.amazonaws.com/110m_cultural/ne_110m_admin_0_countries.zip"
+shapefile_zip_path = download_dir / "ne_110m_admin_0_countries.zip"
+shapefile_dir = download_dir / "ne_110m_admin_0_countries"
+
+if not shapefile_dir.exists():
+    if not shapefile_zip_path.exists():
+        download_file(shapefile_url, shapefile_zip_path)
+    with zipfile.ZipFile(shapefile_zip_path, "r") as zip_ref:
+        zip_ref.extractall(shapefile_dir)
+    print("Shapefile extracted.")
+else:
+    print("Shapefile already exists. Skipping download.")
+
+shapefile_path = shapefile_dir / "ne_110m_admin_0_countries.shp"
