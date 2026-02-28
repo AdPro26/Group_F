@@ -86,7 +86,7 @@ class ForestDataProcessor:
 
         # Function 2 — merge with map if a path was provided
       # if map_path is not None:
-        self.geo_dataframe = gpd.read_file(map_path)
+       # self.geo_dataframe = gpd.read_file(map_path)
         self.merged_dataframe = do_the_merging()
 
     def get_annual_change(self, entity: str) -> pd.DataFrame:
@@ -213,32 +213,3 @@ class ForestDataProcessor:
             )
 
         return result.reset_index(drop=True)
-
-    def annual_forest_change(self, country):
-        """
-        Returns a DataFrame with the annual forest area change for a given country across all available years.
-        :param country: str, the country to filter by.
-        :return: pandas DataFrame with columns ['Year', 'Forest_Change']
-        """
-        if not isinstance(country, str) or not country.strip():
-            raise ValueError("Country must be a non-empty string")
-
-        # Ensure we have the correct columns
-    #    if "entity" not in self.annual_change_df.columns:
-     #       raise KeyError("Column 'Entity' not found in annual_change_df. Check dataset format.")
-     #   if "year" not in self.annual_change_df.columns:
-     #       raise KeyError("Column 'Year' not found in annual_change_df. Check dataset format .")
-     #   if "net_change_forest_area" not in self.annual_change_df.columns:
-      #      raise KeyError("Column 'Net_Forest_Conversion' not found in annual_change_df. Check dataset format.")
-
-        # Filter by country
-        country_data = self.annual_change_df[self.annual_change_df["entity"].str.lower() == country.lower()]
-
-        if country_data.empty:
-            raise KeyError(f"Country '{country}' not found in the dataset.")
-
-        # Select and clean relevant columns
-        result = country_data[["year", "net_change_forest_area"]].dropna()
-        result = result.rename(columns={"net_change_forest_area": "Forest_Change"})
-
-        return result.sort_values("year")

@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from DataProcessor import ForestDataProcessor
 
+import plotly.express as px
+
 st.title("Forest and Land Use Data Visualization")
 
 
@@ -24,6 +26,14 @@ def load_processor():
 
 processor = load_processor()
 
+df = processor.merged_dataframe
+
+#print(df.head())
+
+fig = px.choropleth(df, geojson=df.geometry, locations=df.index, color_continuous_scale="Viridis", projection="mercator")
+fig.update_geos(fitbounds="locations", visible=False)
+
+st.plotly_chart(fig)
 
 
 st.balloons()
