@@ -4,8 +4,8 @@ from typing import Optional
 import pandas as pd
 import geopandas as gpd
 
-from MainClass import download_datasets
-from Function2 import merge_with_map
+from MainClass import load_all_data
+from Function2 import merge_map_with_datasets
 
 
 class ForestDataProcessor:
@@ -77,7 +77,7 @@ class ForestDataProcessor:
         """
 
         # Function 1 — download datasets and load into DataFrames
-        dataframes, self.metadata = download_datasets(self.DOWNLOAD_DIR)
+        dataframes, self.metadata,gdf = load_all_data(self.DOWNLOAD_DIR)
 
         self.annual_change_df = dataframes[0]
         self.annual_deforestation_df = dataframes[1]
@@ -87,7 +87,7 @@ class ForestDataProcessor:
         # Function 2 — merge with map if a path was provided
         if map_path is not None:
             self.geo_dataframe = gpd.read_file(map_path)
-            self.merged_dataframe = merge_with_map(self.geo_dataframe, dataframes)
+            self.merged_dataframe = merge_map_with_datasets(self.geo_dataframe, dataframes)
 
     def get_annual_change(self, entity: str) -> pd.DataFrame:
         """
