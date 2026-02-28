@@ -5,7 +5,7 @@ import pandas as pd
 import geopandas as gpd
 
 from MainClass import load_all_data
-from Function2 import merge_map_with_datasets
+from Merging import do_the_merging
 
 
 class ForestDataProcessor:
@@ -85,9 +85,9 @@ class ForestDataProcessor:
         self.forest_share_df = dataframes[3]
 
         # Function 2 — merge with map if a path was provided
-        if map_path is not None:
-            self.geo_dataframe = gpd.read_file(map_path)
-            self.merged_dataframe = merge_map_with_datasets(self.geo_dataframe, dataframes)
+      # if map_path is not None:
+       # self.geo_dataframe = gpd.read_file(map_path)
+        self.merged_dataframe = do_the_merging()
 
     def get_annual_change(self, entity: str) -> pd.DataFrame:
         """
