@@ -1,92 +1,103 @@
 import pandas as pd
 import requests
-import os
 import json
 from pathlib import Path
 import zipfile
 import geopandas as gpd
 
-data_urls = [
+# --- Constants ---
+DATA_URLS = [
     "https://ourworldindata.org/grapher/annual-change-forest-area.csv?v=1&csvType=full&useColumnShortNames=true",
     "https://ourworldindata.org/grapher/annual-deforestation.csv?v=1&csvType=full&useColumnShortNames=true",
     "https://ourworldindata.org/grapher/terrestrial-protected-areas.csv?v=1&csvType=full&useColumnShortNames=true",
     "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.csv?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/red-list-index.csv?v=1&csvType=full&useColumnShortNames=true",
 ]
 
-metadata_urls = [
+METADATA_URLS = [
     "https://ourworldindata.org/grapher/annual-change-forest-area.metadata.json?v=1&csvType=full&useColumnShortNames=true",
     "https://ourworldindata.org/grapher/annual-deforestation.metadata.json?v=1&csvType=full&useColumnShortNames=true",
     "https://ourworldindata.org/grapher/terrestrial-protected-areas.metadata.json?v=1&csvType=full&useColumnShortNames=true",
-    "https://ourworldindata.org/grapher/share-degraded-land.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/red-list-index.metadata.json?v=1&csvType=full&useColumnShortNames=true",
 ]
 
+SHAPEFILE_URL = "https://naturalearth.s3.amazonaws.com/110m_cultural/ne_110m_admin_0_countries.zip"
 
-def download_file(url: str, save_path: Path):
-    response = requests.get(url)
+
+# --- Helper functions ---
+def download_file(url: str, save_path: Path, timeout: int = 30) -> None:
+    response = requests.get(url, timeout=timeout)
     response.raise_for_status()
-
-    with open(save_path, "wb") as f:
-        f.write(response.content)
-
-    print(f"Downloaded: {save_path.name}")
+    save_path.write_bytes(response.content)
+    print(f"  Downloaded: {save_path.name}")
 
 
-def download_metadata(url: str, save_path: Path):
-    response = requests.get(url)
+def download_metadata(url: str, save_path: Path, timeout: int = 30) -> None:
+    response = requests.get(url, timeout=timeout)
     response.raise_for_status()
-
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(response.json(), f, indent=2)
-
-    print(f"Downloaded metadata: {save_path.name}")
-
-
-# Ensure downloads folder exists
-download_dir = Path("downloads")
-download_dir.mkdir(exist_ok=True)
-
-dataframes_list = []
-metadata_list = []
-
-for i, (data_url, metadata_url) in enumerate(zip(data_urls, metadata_urls)):
+    print(f"  Downloaded metadata: {save_path.name}")
 
 
+# --- Main Function ---
+def load_all_data(download_dir: str | Path = "downloads") -> tuple:
+    """
+    Downloads (if needed) and loads all datasets and the world shapefile.
 
-    data_path = download_dir / data_url.split("?")[0].split('/')[-1]
-    metadata_path = download_dir / metadata_url.split("?")[0].split('/')[-1]    
+    Returns:
+        dataframes_list : list of pd.DataFrames (one per dataset)
+        metadata_list   : list of metadata dicts
+        gdf             : GeoDataFrame of world countries
+    """
+    download_dir = Path(download_dir)
+    download_dir.mkdir(exist_ok=True)
 
-    # Download only if files do not exist
-    if not data_path.exists():
-        download_file(data_url, data_path)
+    dataframes_list = []
+    metadata_list = []
+
+    # --- CSVs + Metadata ---
+    for data_url, metadata_url in zip(DATA_URLS, METADATA_URLS):
+        data_path = download_dir / data_url.split("?")[0].split("/")[-1]
+        metadata_path = download_dir / metadata_url.split("?")[0].split("/")[-1]
+
+        if not data_path.exists():
+            download_file(data_url, data_path)
+        else:
+            print(f"  Skipping (exists): {data_path.name}")
+
+        if not metadata_path.exists():
+            download_metadata(metadata_url, metadata_path)
+        else:
+            print(f"  Skipping (exists): {metadata_path.name}")
+
+        dataframes_list.append(pd.read_csv(data_path))
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            metadata_list.append(json.load(f))
+
+    print("✅ All datasets loaded successfully.")
+
+    # --- Shapefile ---
+    shapefile_zip_path = download_dir / "ne_110m_admin_0_countries.zip"
+    shapefile_dir = download_dir / "ne_110m_admin_0_countries"
+    shapefile_path = shapefile_dir / "ne_110m_admin_0_countries.shp"
+
+    if not shapefile_dir.exists():
+        if not shapefile_zip_path.exists():
+            download_file(SHAPEFILE_URL, shapefile_zip_path)
+        with zipfile.ZipFile(shapefile_zip_path, "r") as zip_ref:
+            zip_ref.extractall(shapefile_dir)
+        print("  Shapefile extracted.")
     else:
-        print(f"{data_path.name} already exists. Skipping download.")
+        print("  Skipping (exists): shapefile directory")
 
-    if not metadata_path.exists():
-        download_metadata(metadata_url, metadata_path)
-    else:
-        print(f"{metadata_path.name} already exists. Skipping download.")
+    gdf = gpd.read_file(shapefile_path)
+    print("✅ Shapefile loaded.")
 
-    # Always load from local files
-    df = pd.read_csv(data_path)
-    with open(metadata_path, "r", encoding="utf8") as f:
-        metadata = json.load(f)
+    return dataframes_list, metadata_list, gdf
 
-    dataframes_list.append(df)
-    metadata_list.append(metadata)
 
-print("All datasets loaded successfully.")
-
-shapefile_url = "https://naturalearth.s3.amazonaws.com/110m_cultural/ne_110m_admin_0_countries.zip"
-shapefile_zip_path = download_dir / "ne_110m_admin_0_countries.zip"
-shapefile_dir = download_dir / "ne_110m_admin_0_countries"
-
-if not shapefile_dir.exists():
-    if not shapefile_zip_path.exists():
-        download_file(shapefile_url, shapefile_zip_path)
-    with zipfile.ZipFile(shapefile_zip_path, "r") as zip_ref:
-        zip_ref.extractall(shapefile_dir)
-    print("Shapefile extracted.")
-else:
-    print("Shapefile already exists. Skipping download.")
-
-shapefile_path = shapefile_dir / "ne_110m_admin_0_countries.shp"
+# --- Only runs when this file is executed directly ---
+if __name__ == "__main__":
+    dataframes_list, metadata_list, gdf = load_all_data()
