@@ -8,9 +8,6 @@ Welcome to our project from NOVA SBE! We hope you enjoy.
 - Javiera Prenafeta - 75087@novasbe.pt
 - Maddalena Manfredi - 71946@novasbe.pt
 
-nini stinks
-
-
 ## Repository Structure
 This repository follows a structured format:
 
