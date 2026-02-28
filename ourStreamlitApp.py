@@ -1,9 +1,9 @@
+from platform import processor
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import plotly.express as px
-
 from DataProcessor import ForestDataProcessor
 
 st.title("Forest and Land Use Data Visualization")
@@ -18,6 +18,12 @@ st.set_page_config(
 
 st.sidebar.title("Are you interested in forest data?")
 st.sidebar.markdown("Hijo de puta")
+
+def load_processor():
+    return ForestDataProcessor()
+
+processor = load_processor()
+
 
 
 st.balloons()
@@ -45,21 +51,39 @@ if "page" not in st.session_state:
 
 page = st.session_state.page
 
-def load_processor():
-    return ForestDataProcessor()
+def show_annual_forest_change(processor):
+    st.header("🌲 Annual Change in Forest Area")
 
-processor = load_processor()
+    country = st.text_input("Enter a country name", value="Brazil")
 
-fig = px.choropleth(processor.merged_dataframe, geojson=processor.merged_dataframe.geometry, locations=processor.merged_dataframe.index, color="forest_share", color_continuous_scale="Viridis", projection="mercator")
-fig.update_geos(fitbounds="locations", visible=False)
+    if st.button("Generate Histogram"):
+        try:
+            df = processor.annual_forest_change(country=country)
 
-st.plotly_chart(fig)
+            fig, ax = plt.subplots(figsize=(12, 5))
 
+            colors = ["#d32f2f" if v < 0 else "#2e7d32" for v in df["Forest_Change"]]
+            ax.bar(df["year"], df["Forest_Change"], color=colors, edgecolor="white", linewidth=0.5)
+
+            ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
+            ax.set_title(f"Annual Forest Area Change — {country}", fontsize=16, fontweight="bold")
+            ax.set_xlabel("year", fontsize=13)
+            ax.set_ylabel("Net Forest Conversion (ha)", fontsize=13)
+            ax.grid(axis="y", linestyle="--", alpha=0.4)
+
+            st.pyplot(fig)
+
+            st.subheader("Summary Statistics")
+            st.dataframe(df.describe().rename(columns={"Forest_Change": "Forest Change (ha)"}))
+
+        except (KeyError, ValueError) as e:
+            st.error(f"Error: {e}")
+            
 
 if page == "Main Page":
     st.write("Welcome!")
 elif page == "Anual Change in forest area":
-    st.write("Forest area content...")
+    show_annual_forest_change(processor)
 elif page == "Annual deforestation":
     st.write("Deforestation content...")
 elif page == "Share of land that is protected":
