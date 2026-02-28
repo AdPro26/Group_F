@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.express as px
+
+from DataProcessor import ForestDataProcessor
 
 st.title("Forest and Land Use Data Visualization")
 
@@ -41,6 +44,17 @@ if "page" not in st.session_state:
     st.session_state.page = "Main Page"
 
 page = st.session_state.page
+
+def load_processor():
+    return ForestDataProcessor()
+
+processor = load_processor()
+
+fig = px.choropleth(processor.merged_dataframe, geojson=processor.merged_dataframe.geometry, locations=processor.merged_dataframe.index, color="forest_share", color_continuous_scale="Viridis", projection="mercator")
+fig.update_geos(fitbounds="locations", visible=False)
+
+st.plotly_chart(fig)
+
 
 if page == "Main Page":
     st.write("Welcome!")
