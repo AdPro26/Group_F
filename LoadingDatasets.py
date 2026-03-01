@@ -93,11 +93,6 @@ def load_all_data(download_dir: str | Path = "downloads") -> tuple:
         print("  Skipping (exists): shapefile directory")
 
     gdf = gpd.read_file(shapefile_path)
-    print("✅ Shapefile loaded.")
+    print("✅ Shapefile loaded.") 
 
     return dataframes_list, metadata_list, gdf
-
-
-# --- Only runs when this file is executed directly ---
-if __name__ == "__main__":
-    dataframes_list, metadata_list, gdf = load_all_data()

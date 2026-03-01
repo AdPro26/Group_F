@@ -5,62 +5,76 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from DataProcessor import ForestDataProcessor
-
 import plotly.express as px
+from streamlit_plotly_events import plotly_events
 
-
-st.markdown("""
-    <style>
-        .block-container {
-            padding-top: 1rem;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-st.title("Forest and Land Use Data Visualization")
-
-# Configure page settings and layout
+# MUST be first
 st.set_page_config(
     page_title="Forest and Land Use Dashboard",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-st.sidebar.title("Are you interested in forest data?")
-st.sidebar.markdown("Hijo de puta")
+st.markdown("""
+    <style>
+        .block-container { padding-top: 1rem; }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("Forest and Land Use Data Visualization")
 
 @st.cache_resource
 def load_processor():
     return ForestDataProcessor()
 
 processor = load_processor()
-
 df = processor.merged_dataframe
 
-#print(df.head()) 
-
-@st.cache_resource
+@st.cache_data
 def load_choropleth_fig():
-    fig = px.choropleth(df, geojson=df.geometry, locations=df.index, color_continuous_scale="Viridis", projection="natural earth")
+    _df = processor.merged_dataframe
+    fig = px.choropleth(
+        _df,
+        geojson=_df.geometry,
+        color=_df["entity"],
+        locations=_df.index,
+        color_continuous_scale="Viridis",
+        projection="natural earth"
+    )
     fig.update_geos(
-        fitbounds="locations", 
         visible=False,
-        center={"lat": 20, "lon": 0}
+        showframe=False,
+        projection_type="natural earth",
+        fitbounds="locations", 
+        center={"lat": 20, "lon": 0},
+        lataxis_range=[-60, 85],
+        lonaxis_range=[-180, 180],
     )
     fig.update_layout(
-    height=450,
-    margin={"r":0,"t":0,"l":0,"b":0},
+        height=450,
+        margin={"r":0,"t":0,"l":0,"b":0},
+        showlegend=False,
+        coloraxis_showscale=False,
     )
     return fig
 
 fig = load_choropleth_fig()
 
-st.plotly_chart(fig, use_container_width=True)
+clicked = plotly_events(fig, click_event=True, hover_event=False, override_width="100%", override_height=450)
 
+if clicked:
+    country_index = clicked[0]["pointIndex"]
+    selected_country = df.index[country_index]
+    st.session_state.selected_country = selected_country
+
+selected_country = st.session_state.get("selected_country", None)
+if selected_country:
+    st.info(f"🌍 Selected: **{selected_country}**")
 
 with st.sidebar:
+    st.title("Are you interested in forest data?")
+    st.markdown("Hijo de puta")
     st.title("Navigation")
-    
     if st.button("🏠 Main Page", use_container_width=True):
         st.session_state.page = "Main Page"
     if st.button("🌲 Annual Change in Forest Area", use_container_width=True):
@@ -69,59 +83,60 @@ with st.sidebar:
         st.session_state.page = "Annual deforestation"
     if st.button("🛡️ Share of Land Protected", use_container_width=True):
         st.session_state.page = "Share of land that is protected"
-    if st.button("⚠️ Share of Land Degraded", use_container_width=True):
-        st.session_state.page = "Share of land that is degraded"
+    if st.button("⚠️ Terrestrial protected areas", use_container_width=True):
+        st.session_state.page = "Terrestrial protected areas"
     if st.button("⭐ Red List Index", use_container_width=True):
         st.session_state.page = "Red List Index"
 
-
-# Initialize default page
 if "page" not in st.session_state:
     st.session_state.page = "Main Page"
 
 page = st.session_state.page
 
-def show_annual_forest_change(processor):
-    st.header("🌲 Annual Change in Forest Area")
+def show_histogram(processor, column_name="annual-change-forest_area"):
+    st.header(f"Showing histogram for column: {column_name}")
 
-    country = st.text_input("Enter a country name", value="Brazil")
+    selected_country = st.session_state.get("selected_country", None)
 
-    if st.button("Generate Histogram"):
-        try:
-            df = processor.merged_dataframe
+    if not selected_country:
+        st.info("🗺️ Click on a country on the map to show its histogram")
+        return
 
-            print(df.columns)
+    st.markdown(f"Showing data for: **{selected_country}**")
 
-            fig, ax = plt.subplots(figsize=(12, 5))
+    if not selected_country:
+        return
 
-            colors = ["#d32f2f" if v < 0 else "#2e7d32" for v in df["annual-change-forest_area"]]
-            ax.bar(df["year"], df["annual-change-forest_area"], color=colors, edgecolor="white", linewidth=0.5)
+    try:
+        df = processor.merged_dataframe
+        country_df = df[df["entity"] == selected_country]
 
-            ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
-            ax.set_title(f"Annual Forest Area Change — {country}", fontsize=16, fontweight="bold")
-            ax.set_xlabel("year", fontsize=13)
-            ax.set_ylabel("Net Forest Conversion (ha)", fontsize=13)
-            ax.grid(axis="y", linestyle="--", alpha=0.4)
+        if country_df.empty:
+            st.warning(f"No data found for {selected_country}")
+            return
 
-            st.pyplot(fig)
+        fig, ax = plt.subplots(figsize=(12, 5))
+        colors = ["#d32f2f" if v < 0 else "#2e7d32" for v in country_df[column_name]]
+        ax.bar(country_df["year"], country_df[column_name], color=colors, edgecolor="white", linewidth=0.5)
+        ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
+        ax.set_title(f"{column_name} — {selected_country}", fontsize=16, fontweight="bold")
+        ax.set_xlabel("Year", fontsize=13)
+        ax.set_ylabel("Value", fontsize=13)
+        ax.grid(axis="y", linestyle="--", alpha=0.4)
+        st.pyplot(fig)
 
-            st.subheader("Summary Statistics")
-            st.dataframe(df.describe().rename(columns={"Forest_Change": "Forest Change (ha)"}))
-
-        except (KeyError, ValueError) as e:
-            st.error(f"Error: {e}")
-            
+    except (KeyError, ValueError) as e:
+        st.error(f"Error: {e}")
 
 if page == "Main Page":
-    st.write("Write the description of the project here, and maybe some instructions on how to use the dashboard. You can also include some key insights or highlights from the data to engage users right away.")
+    st.write("Write the description of the project here...")
 elif page == "Anual Change in forest area":
-    show_annual_forest_change(processor)
+    show_histogram(processor, "annual-change-forest_area")
 elif page == "Annual deforestation":
-    st.write("Deforestation content...")
+    show_histogram(processor, "annual-deforestation")
 elif page == "Share of land that is protected":
-    st.write("Protected land content...")       
-elif page == "Share of land that is degraded":
-    st.write("Degraded land content...")
-elif page == "OUR SPECIAL DATASET":
-    st.write("Special dataset content...")
-
+    show_histogram(processor, "forest-area-as-share-of-land-area")
+elif page == "Terrestrial protected areas":
+    show_histogram(processor, "terrestrial-protected-areas_1")
+elif page == "Red List Index":
+    show_histogram(processor, "red-list-index")
