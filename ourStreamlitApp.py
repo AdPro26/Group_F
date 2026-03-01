@@ -8,12 +8,20 @@ from DataProcessor import ForestDataProcessor
 
 import plotly.express as px
 
-st.title("Forest and Land Use Data Visualization")
 
+st.markdown("""
+    <style>
+        .block-container {
+            padding-top: 1rem;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("Forest and Land Use Data Visualization")
 
 # Configure page settings and layout
 st.set_page_config(
-    page_title="Movie Data Processor",
+    page_title="Forest and Land Use Dashboard",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -21,6 +29,7 @@ st.set_page_config(
 st.sidebar.title("Are you interested in forest data?")
 st.sidebar.markdown("Hijo de puta")
 
+@st.cache_resource
 def load_processor():
     return ForestDataProcessor()
 
@@ -30,13 +39,24 @@ df = processor.merged_dataframe
 
 #print(df.head()) 
 
-fig = px.choropleth(df, geojson=df.geometry, locations=df.index, color_continuous_scale="Viridis", projection="mercator")
-fig.update_geos(fitbounds="locations", visible=False)
+@st.cache_resource
+def load_choropleth_fig():
+    fig = px.choropleth(df, geojson=df.geometry, locations=df.index, color_continuous_scale="Viridis", projection="natural earth")
+    fig.update_geos(
+        fitbounds="locations", 
+        visible=False,
+        center={"lat": 20, "lon": 0}
+    )
+    fig.update_layout(
+    height=450,
+    margin={"r":0,"t":0,"l":0,"b":0},
+    )
+    return fig
 
-st.plotly_chart(fig)
+fig = load_choropleth_fig()
 
+st.plotly_chart(fig, use_container_width=True)
 
-st.balloons()
 
 with st.sidebar:
     st.title("Navigation")
@@ -68,12 +88,14 @@ def show_annual_forest_change(processor):
 
     if st.button("Generate Histogram"):
         try:
-            df = processor.annual_forest_change(country=country)
+            df = processor.merged_dataframe
+
+            print(df.columns)
 
             fig, ax = plt.subplots(figsize=(12, 5))
 
-            colors = ["#d32f2f" if v < 0 else "#2e7d32" for v in df["Forest_Change"]]
-            ax.bar(df["year"], df["Forest_Change"], color=colors, edgecolor="white", linewidth=0.5)
+            colors = ["#d32f2f" if v < 0 else "#2e7d32" for v in df["annual-change-forest_area"]]
+            ax.bar(df["year"], df["annual-change-forest_area"], color=colors, edgecolor="white", linewidth=0.5)
 
             ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
             ax.set_title(f"Annual Forest Area Change — {country}", fontsize=16, fontweight="bold")
@@ -91,9 +113,9 @@ def show_annual_forest_change(processor):
             
 
 if page == "Main Page":
-    st.write("Welcome!")
+    st.write("Write the description of the project here, and maybe some instructions on how to use the dashboard. You can also include some key insights or highlights from the data to engage users right away.")
 elif page == "Anual Change in forest area":
-    show_annual_forest_change(processor,"")
+    show_annual_forest_change(processor)
 elif page == "Annual deforestation":
     st.write("Deforestation content...")
 elif page == "Share of land that is protected":
