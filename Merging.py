@@ -1,21 +1,18 @@
 import pandas as pd
 import geopandas as gpd
-from MainClass import load_all_data
+from LoadingDatasets import load_all_data 
 
 # --- Fase 1: Load all datasets and merge them into a single DataFrame ---
 
-def do_the_merging():
+def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame) -> pd.DataFrame:
 
-    # --- Load data ---
-    dataframes_list, metadata_list, gdf = load_all_data()
 
-    # --- Dataset names (used to rename value columns) ---
     DATASET_NAMES = [
-        "annual_change_forest_area",
-        "annual_deforestation",
-        "terrestrial_protected_areas",
-        "forest_area_share_land",
-        "red_list_index",
+        "annual-change-forest_area",
+        "annual-deforestation",
+        "forest-area-as-share-of-land-area",
+        "terrestrial-protected-areas",
+        "red-list-index",
     ]
 
     # --- Build a master code -> entity mapping from all dataframes ---
@@ -57,8 +54,9 @@ def do_the_merging():
         # Drop entity from all dataframes — will be restored after merge
         df = df.drop(columns=["entity"])
 
-        print(f"  [{name}] {len(df)} rows after filtering")
         dfs_cleaned.append(df)
+
+
 
     # --- Progressive outer merge on 'code' + 'year' ---
     merged = dfs_cleaned[0]
@@ -75,22 +73,9 @@ def do_the_merging():
     # --- Sort by country and year ---
     merged = merged.sort_values(["entity", "year"]).reset_index(drop=True)
 
-    print(f"\n✅ Merge complete: {merged.shape[0]} rows, {merged.shape[1]} columns")
-    print(merged.head(10))
-
-    # --- Check if forest_area_share_land_2 is empty ---
-    '''
-    print(merged["forest_area_share_land_2"].isna().sum(), "NaN values")
-    print(merged["forest_area_share_land_2"].notna().sum(), "non-NaN values")
-    print(merged["forest_area_share_land_2"].dropna().head(10))
-    '''
-
-    '''Since forest_area_share_land_2 is completely empty, we can safely drop it before merging with the GeoDataFrame.'''
-    merged = merged.drop(columns=["forest_area_share_land_2"])
 
     # To save the merged dataset before merging with the GeoDataFrame
     # merged.to_csv("merged_dataset.csv", index=False)
-
 
     #-----------------------------------------------------------------------------------------------
 
@@ -107,8 +92,8 @@ def do_the_merging():
     merged_geo = gdf_clean.merge(merged, left_on="ISO_A3", right_on="code", how="left")
 
     # Result is a GeoDataFrame with geometry + all our data columns
-    print(f"\n✅ Geo merge complete: {merged_geo.shape[0]} rows, {merged_geo.shape[1]} columns")
-    print(merged_geo.head())
+    #print(f"\n✅ Geo merge complete: {merged_geo.shape[0]} rows, {merged_geo.shape[1]} columns")
+    #print(merged_geo.head())
 
     # --- Save outputs ---
     merged_geo.to_file("merged_output.geojson", driver="GeoJSON")

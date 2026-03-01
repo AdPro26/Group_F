@@ -28,7 +28,7 @@ processor = load_processor()
 
 df = processor.merged_dataframe
 
-#print(df.head())
+#print(df.head()) 
 
 fig = px.choropleth(df, geojson=df.geometry, locations=df.index, color_continuous_scale="Viridis", projection="mercator")
 fig.update_geos(fitbounds="locations", visible=False)
@@ -51,8 +51,8 @@ with st.sidebar:
         st.session_state.page = "Share of land that is protected"
     if st.button("⚠️ Share of Land Degraded", use_container_width=True):
         st.session_state.page = "Share of land that is degraded"
-    if st.button("⭐ Our Special Dataset", use_container_width=True):
-        st.session_state.page = "OUR SPECIAL DATASET"
+    if st.button("⭐ Red List Index", use_container_width=True):
+        st.session_state.page = "Red List Index"
 
 
 # Initialize default page
@@ -93,7 +93,7 @@ def show_annual_forest_change(processor):
 if page == "Main Page":
     st.write("Welcome!")
 elif page == "Anual Change in forest area":
-    show_annual_forest_change(processor)
+    show_annual_forest_change(processor,"")
 elif page == "Annual deforestation":
     st.write("Deforestation content...")
 elif page == "Share of land that is protected":

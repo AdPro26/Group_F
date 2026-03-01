@@ -1,19 +1,61 @@
-from pathlib import Path
-from typing import Optional
-
 import pandas as pd
 import geopandas as gpd
+from pathlib import Path
+from typing import Optional
+from typing import Optional
+from pydantic import BaseModel, field_validator
+from pydantic.functional_validators import field_validator
 
-from MainClass import load_all_data
+
+from LoadingDatasets import load_all_data
 from Merging import do_the_merging
+
+class CountryInfo(BaseModel):
+    """Pydantic model to validate country information."""
+
+    entity: str
+    code: Optional[str] = None
+
+    @field_validator("entity")
+    def validate_entity(cls, value):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("Entity must be a non-empty string.")
+        return value.strip()
+
+    @field_validator("code")
+    def validate_code(cls, value):
+        if value is not None:
+            if not isinstance(value, str) or len(value) != 3:
+                raise ValueError("Code must be a 3-letter ISO country code.")
+            return value.upper()
+        return value
 
 
 class ForestDataProcessor:
-    """Class to process forest-related datasets from Our World in Data."""
+    """Class to process all required datasets from Our World in Data."""
+
+        # --- Constants ---
+    DATA_URLS = [
+        "https://ourworldindata.org/grapher/annual-change-forest-area.csv?v=1&csvType=full&useColumnShortNames=true",
+        "https://ourworldindata.org/grapher/annual-deforestation.csv?v=1&csvType=full&useColumnShortNames=true",
+        "https://ourworldindata.org/grapher/terrestrial-protected-areas.csv?v=1&csvType=full&useColumnShortNames=true",
+        "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.csv?v=1&csvType=full&useColumnShortNames=true",
+        "https://ourworldindata.org/grapher/red-list-index.csv?v=1&csvType=full&useColumnShortNames=true",
+    ]
+
+    METADATA_URLS = [
+        "https://ourworldindata.org/grapher/annual-change-forest-area.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+        "https://ourworldindata.org/grapher/annual-deforestation.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+        "https://ourworldindata.org/grapher/terrestrial-protected-areas.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+        "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+        "https://ourworldindata.org/grapher/red-list-index.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+    ]
+
+    SHAPEFILE_URL = "https://naturalearth.s3.amazonaws.com/110m_cultural/ne_110m_admin_0_countries.zip"
 
     DOWNLOAD_DIR: Path = Path("downloads")
 
-    def __init__(self, map_path: Optional[Path] = None) -> None:
+    def __init__(self) -> None:
         """
         Initializes the ForestDataProcessor.
 
@@ -27,6 +69,12 @@ class ForestDataProcessor:
         self.geo_dataframe: Optional[gpd.GeoDataFrame] = None
         self.merged_dataframe: Optional[gpd.GeoDataFrame] = None
         self.metadata: list[dict] = []
+
+        dataframes, self.metadata,gdf = load_all_data(self.DOWNLOAD_DIR)
+        
+        self.merged_dataframe = do_the_merging(dataframes,gdf)
+
+        
 
         # Named DataFrame attributes — one per dataset
         self.annual_change_df: Optional[pd.DataFrame] = None
@@ -76,9 +124,6 @@ class ForestDataProcessor:
               Empty for most rows.
         """
 
-        # Function 1 — download datasets and load into DataFrames
-        dataframes, self.metadata,gdf = load_all_data(self.DOWNLOAD_DIR)
-
         self.annual_change_df = dataframes[0]
         self.annual_deforestation_df = dataframes[1]
         self.terrestrial_protected_df = dataframes[2]
@@ -87,7 +132,6 @@ class ForestDataProcessor:
         # Function 2 — merge with map if a path was provided
       # if map_path is not None:
        # self.geo_dataframe = gpd.read_file(map_path)
-        self.merged_dataframe = do_the_merging()
 
     def get_annual_change(self, entity: str) -> pd.DataFrame:
         """
@@ -213,3 +257,4 @@ class ForestDataProcessor:
             )
 
         return result.reset_index(drop=True)
+    
