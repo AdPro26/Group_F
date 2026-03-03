@@ -32,8 +32,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.sidebar.title("Are you interested in forest data?")
-st.sidebar.markdown("Hijo de puta")
+st.sidebar.title("Are you interested in forest and land data?")
+st.sidebar.markdown("Dive into exploration with this tool!")
 
 @st.cache_resource
 def load_processor():
