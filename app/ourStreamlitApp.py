@@ -54,8 +54,8 @@ def load_choropleth_fig():
         center={"lat": 20, "lon": 0}
     )
     fig.update_layout(
-    height=450,
-    margin={"r":0,"t":0,"l":0,"b":0},
+        height=450,
+        margin={"r":0,"t":0,"l":0,"b":0},
     )
     return fig
 
@@ -171,9 +171,27 @@ def show_linegraph(processor, column_name="red-list-index"):
         print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         st.error(f"Error: {e}")
 
+
+def update_map(column_name, year=2025):
+     
+    filtered_df = df[df['year'] == year]
+    
+    fig.update_traces(
+        selector=dict(type='choropleth'),
+        locations=filtered_df.index,
+        z=filtered_df[column_name],
+        colorscale='Plasma'
+    )
+    fig.update_geos(fitbounds="locations", visible=False)
+    
+    # Remove margin from the figure itself
+    fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+    
+    st.plotly_chart(fig, width='content', key=f"map_{column_name}")
+
 # ── Page routing ──────────────────────────────────────────────────────────────
 if page == "Main Page":
-    st.write("Welcome! Click a country on the map, then use the sidebar to explore forest data.")
+    st.write("Welcome! This big map is showing the latest available data for the year 2025. When you click on a page on the left, the map will update to show the data for that specific indicator. Scroll down on each page to see more detailed visualizations for each indicator.")
 elif page == "Anual Change in forest area":
     show_histogram(processor, "annual-change-forest_area")
 elif page == "Annual deforestation":
