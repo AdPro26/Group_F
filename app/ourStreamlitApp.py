@@ -61,7 +61,7 @@ def load_choropleth_fig():
 
 fig = load_choropleth_fig()
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
 
 country_list = [country.name for country in pycountry.countries]
 
@@ -72,17 +72,17 @@ with st.sidebar:
     st.title("Forest Data Explorer")
     st.markdown("Explore forest and land use trends around the world.")
     st.title("Navigation")
-    if st.button("🏠 Main Page", use_container_width=True):
+    if st.button("🏠 Main Page", width='stretch'):
         st.session_state.page = "Main Page"
-    if st.button("🌲 Annual Change in Forest Area", use_container_width=True):
+    if st.button("🌲 Annual Change in Forest Area", width='stretch'):
         st.session_state.page = "Anual Change in forest area"
-    if st.button("🪓 Annual Deforestation", use_container_width=True):
+    if st.button("🪓 Annual Deforestation", width='stretch'):
         st.session_state.page = "Annual deforestation"
-    if st.button("🛡️ Share of Land Protected", use_container_width=True):
+    if st.button("🛡️ Share of Land Protected", width='stretch'):
         st.session_state.page = "Share of land that is protected"
-    if st.button("⚠️ Terrestrial protected areas", use_container_width=True):
+    if st.button("⚠️ Terrestrial protected areas", width='stretch'):
         st.session_state.page = "Terrestrial protected areas"
-    if st.button("⭐ Red List Index", use_container_width=True):
+    if st.button("⭐ Red List Index", width='stretch'):
         st.session_state.page = "Red List Index"
 
 if "page" not in st.session_state:
@@ -92,7 +92,7 @@ page = st.session_state.page
 
 # ── Histogram ─────────────────────────────────────────────────────────────────
 def show_histogram(processor, column_name="annual-change-forest_area"):
-    selected_country = st.session_state.get("selected_country", None)
+   # selected_country = st.session_state.get("selected_country", None)
 
     st.header(f"Showing histogram for column: {column_name}")
 
@@ -131,6 +131,45 @@ def show_histogram(processor, column_name="annual-change-forest_area"):
     except (KeyError, ValueError) as e:
         st.error(f"Error: {e}")
 
+def show_linegraph(processor, column_name="red-list-index"):
+    st.header("Red List Index Trends")
+
+    countries = st.multiselect("Select countries", options=country_list, default=["Chile", "Georgia","Italy","Serbia"])
+
+    if not countries:
+        st.warning("Please select at least one country.")
+        return
+
+    try:
+        # Get the DataFrame from your fixed function
+        df_plot = processor.get_red_list_index(countries)
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+
+
+        # Loop through each country to create a separate line
+        for country in countries:
+            # Filter the data just for this specific country
+            country_data = df_plot[df_plot["entity"] == country]
+            
+            if not country_data.empty:
+                ax.plot(
+                    country_data["year"], 
+                    country_data[column_name], 
+                    label=country
+                )
+
+        ax.set_title("Species Survival Trend (Red List Index)")
+        ax.set_xlabel("Year")
+        ax.set_ylabel("Index (1.0 = Not Threatened)")
+        ax.legend() # This shows which color belongs to which country
+        ax.grid(True, alpha=0.3)
+        
+        st.pyplot(fig)
+
+    except Exception as e:
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        st.error(f"Error: {e}")
 
 # ── Page routing ──────────────────────────────────────────────────────────────
 if page == "Main Page":
@@ -144,4 +183,4 @@ elif page == "Share of land that is protected":
 elif page == "Terrestrial protected areas":
     show_histogram(processor, "terrestrial-protected-areas_1")
 elif page == "Red List Index":
-    show_histogram(processor, "red-list-index")
+    show_linegraph(processor, "red-list-index")

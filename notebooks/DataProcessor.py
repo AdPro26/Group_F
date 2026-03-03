@@ -259,4 +259,21 @@ class ForestDataProcessor:
             )
 
         return result.reset_index(drop=True)
-    
+
+            
+    def get_red_list_index(self, entities: list[str]) -> pd.DataFrame:
+        if self.merged_dataframe is None:
+            raise RuntimeError("merged_dataframe is not loaded.")
+
+        # Filter for the countries
+        mask = self.merged_dataframe["entity"].isin(entities)
+        
+        # IMPORTANT: Select a LIST of columns to keep it as a DataFrame
+        # We need 'entity' to group the lines and 'year' for the x-axis
+        result_df = self.merged_dataframe[mask][['entity', 'year', 'red-list-index']].copy()
+
+        if result_df.empty:
+            raise ValueError(f"None of the entities {entities} were found.")
+
+        # Now .sort_values(by=...) will work because 'entity' and 'year' exist!
+        return result_df.sort_values(by=["entity", "year"])
