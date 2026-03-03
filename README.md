@@ -41,6 +41,9 @@ Group_F/
 - Javiera Prenafeta - 75087@novasbe.pt
 - Maddalena Manfredi - 71946@novasbe.pt
 
+## How to run it
+- From the root folder in terminal execute command 'streamlit run app/ourStreamlitApp.py'
+
 ## Contributions
 
 We follow a structured workflow:
