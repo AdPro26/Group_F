@@ -7,8 +7,8 @@ from pydantic import BaseModel, field_validator
 from pydantic.functional_validators import field_validator
 
 
-from LoadingDatasets import load_all_data
-from Merging import do_the_merging
+from notebooks.LoadingDatasets import load_all_data
+from notebooks.Merging import do_the_merging
 
 class CountryInfo(BaseModel):
     """Pydantic model to validate country information."""

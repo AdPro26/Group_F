@@ -1,6 +1,6 @@
 import pandas as pd
 import geopandas as gpd
-from LoadingDatasets import load_all_data 
+from notebooks.LoadingDatasets import load_all_data 
 
 # --- Fase 1: Load all datasets and merge them into a single DataFrame ---
 
