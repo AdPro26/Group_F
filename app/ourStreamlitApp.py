@@ -61,8 +61,6 @@ def load_choropleth_fig():
 
 fig = load_choropleth_fig()
 
-st.plotly_chart(fig, width='stretch')
-
 country_list = [country.name for country in pycountry.countries]
 
 
@@ -172,33 +170,59 @@ def show_linegraph(processor, column_name="red-list-index"):
         st.error(f"Error: {e}")
 
 
-def update_map(column_name, year=2025):
-     
-    filtered_df = df[df['year'] == year]
+def draw_chloropleth_map(gdf,column_name):
+
+
+    filtered_gdf = gdf[gdf[column_name].notna()]
+
+
+    year = filtered_gdf["year"].max()
+
+    st.write(f"This map shows the data for the indicator {column_name} for the year {year}. You can see the distribution of this indicator across different countries. Darker colors indicate higher values, while lighter colors indicate lower values. Click on a country to see more details in the histogram below.")
+
+    filtered_gdf = gdf[gdf['year'] == year]
+
+    print(f"Drawing map for column: {column_name} (Year: {year})")
+    print(filtered_gdf[column_name].head())
     
-    fig.update_traces(
-        selector=dict(type='choropleth'),
-        locations=filtered_df.index,
-        z=filtered_df[column_name],
-        colorscale='Plasma'
+    fig = px.choropleth(
+        filtered_gdf,
+        geojson=filtered_gdf.geometry,
+        locations=filtered_gdf.index,
+        color=column_name,
+        color_continuous_scale='Plasma',
+        projection='natural earth'
     )
-    fig.update_geos(fitbounds="locations", visible=False)
+
+    fig.update_geos(
+        fitbounds="locations", 
+        visible=False,
+        center={"lat": 20, "lon": 0}
+    )
+    fig.update_layout(
+        height=450,
+        margin={"r":0,"t":0,"l":0,"b":0},
+    )
     
-    # Remove margin from the figure itself
-    fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-    
-    st.plotly_chart(fig, width='content', key=f"map_{column_name}")
+    st.plotly_chart(fig, width='stretch', key=f"map_{column_name}")
+
 
 # ── Page routing ──────────────────────────────────────────────────────────────
-if page == "Main Page":
-    st.write("Welcome! This big map is showing the latest available data for the year 2025. When you click on a page on the left, the map will update to show the data for that specific indicator. Scroll down on each page to see more detailed visualizations for each indicator.")
+if page == "Main Page": 
+    st.plotly_chart(fig, width='stretch')
+    st.write("Welcome! This big map is showing the latest available data. When you click on a page on the left, the chloropleth map will update to show the data for that specific indicator for the last year available. Scroll down on each page to see more detailed visualizations for each indicator.")
 elif page == "Anual Change in forest area":
+    draw_chloropleth_map(processor.merged_dataframe, "annual-change-forest_area")
     show_histogram(processor, "annual-change-forest_area")
-elif page == "Annual deforestation":
+elif page == "Annual deforestation":  
+    draw_chloropleth_map(processor.merged_dataframe, "annual-deforestation")
     show_histogram(processor, "annual-deforestation")
 elif page == "Share of land that is protected":
+    draw_chloropleth_map(processor.merged_dataframe, "forest-area-as-share-of-land-area")
     show_histogram(processor, "forest-area-as-share-of-land-area")
 elif page == "Terrestrial protected areas":
+    draw_chloropleth_map(processor.merged_dataframe, "terrestrial-protected-areas_1")
     show_histogram(processor, "terrestrial-protected-areas_1")
 elif page == "Red List Index":
+    draw_chloropleth_map(processor.merged_dataframe, "red-list-index")  
     show_linegraph(processor, "red-list-index")
