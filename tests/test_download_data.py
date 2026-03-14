@@ -2,7 +2,7 @@ import os
 import pytest
 import pandas as pd
 from pathlib import Path
-from notebooks.LoadingDatasets import data_urls, metadata_urls, download_file, download_metadata
+from notebooks.LoadingDatasets import DATA_URLS as data_urls, METADATA_URLS as metadata_urls, download_file, download_metadata
 
 def test_download_folder():
     # Ensure downloads folder exists

@@ -72,7 +72,7 @@ class ForestDataProcessor:
 
         dataframes, self.metadata,gdf = load_all_data(self.DOWNLOAD_DIR)
 
-        df = do_the_merging(dataframes,gdf)
+        df = do_the_merging(dataframes, gdf, self.DOWNLOAD_DIR)
         
         self.merged_dataframe = df
 
