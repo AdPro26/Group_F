@@ -82,7 +82,8 @@ with st.sidebar:
         st.session_state.page = "Terrestrial protected areas"
     if st.button("⭐ Red List Index", width='stretch'):
         st.session_state.page = "Red List Index"
-
+    if st.button("🌍 New Page", width='stretch'):
+        st.session_state.page = "New Page"
 if "page" not in st.session_state:
     st.session_state.page = "Main Page"
 
@@ -226,3 +227,6 @@ elif page == "Terrestrial protected areas":
 elif page == "Red List Index":
     draw_chloropleth_map(processor.merged_dataframe, "red-list-index")  
     show_linegraph(processor, "red-list-index")
+elif page == "New Page":
+    st.header("Welcome to the New Page!")
+    st.write("Petra is the GOAT")
