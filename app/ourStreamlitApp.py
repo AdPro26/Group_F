@@ -11,6 +11,7 @@ import pycountry
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from notebooks.DataProcessor import ForestDataProcessor
+from notebooks.ImageDownloader import download_esri_image
 
 import plotly.express as px
 
@@ -84,6 +85,8 @@ with st.sidebar:
         st.session_state.page = "Red List Index"
     if st.button("🌍 New Page", width='stretch'):
         st.session_state.page = "New Page"
+    if st.button("🛰️ AI Image Analysis", width='stretch'):
+        st.session_state.page = "AI Image Analysis"
 if "page" not in st.session_state:
     st.session_state.page = "Main Page"
 
@@ -230,3 +233,40 @@ elif page == "Red List Index":
 elif page == "New Page":
     st.header("Welcome to the New Page!")
     st.write("Petra is the GOAT")
+
+
+elif page == "AI Image Analysis":
+    st.header("🛰️ AI Image Analysis")
+    st.write("Select geographical coordinates and zoom level to download satellite imagery from ESRI World Imagery.")
+    
+    # Create three columns for latitude, longitude, zoom
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        latitude = st.slider("Latitude", min_value=-90.0, max_value=90.0, value=0.0, step=0.1)
+    
+    with col2:
+        longitude = st.slider("Longitude", min_value=-180.0, max_value=180.0, value=0.0, step=0.1)
+    
+    with col3:
+        zoom = st.slider("Zoom Level", min_value=1, max_value=18, value=10, step=1)
+    
+    # Display current coordinates
+    st.info(f"📍 Current coordinates: Lat {latitude:.2f}, Lon {longitude:.2f}, Zoom {zoom}")
+    
+    # Download button
+    if st.button("📥 Download Image", use_container_width=True):
+        with st.spinner("Downloading image from ESRI..."):
+            success, filepath, message = download_esri_image(latitude, longitude, zoom)
+            
+            if success:
+                st.success(f"✅ {message}")
+                # Display the downloaded image
+                try:
+                    from PIL import Image
+                    img = Image.open(filepath)
+                    st.image(img, caption=f"ESRI Satellite Image - Lat {latitude:.2f}, Lon {longitude:.2f}, Zoom {zoom}")
+                except Exception as e:
+                    st.error(f"Error displaying image: {str(e)}")
+            else:
+                st.error(f"❌ {message}")
