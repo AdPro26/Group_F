@@ -31,7 +31,11 @@ def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, d
     dfs_cleaned = []
     for df, name in zip(dataframes_list, DATASET_NAMES):
         df = df.copy()
+
+        df = df.fillna(0)  # Replace NaN with 0
         df.columns = [c.lower().strip() for c in df.columns]
+
+        print(df.isna().sum())  # Debug: Check for remaining NaN values after fillna    
 
         # Remove rows where 'code' is missing or empty (e.g. continents, world aggregates)
         df = df[df["code"].notna() & (df["code"].str.strip() != "")]
@@ -55,6 +59,8 @@ def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, d
         # Drop entity from all dataframes — will be restored after merge
         df = df.drop(columns=["entity"])
 
+
+
         dfs_cleaned.append(df)
 
 
@@ -62,7 +68,7 @@ def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, d
     # --- Progressive outer merge on 'code' + 'year' ---
     merged = dfs_cleaned[0]
     for df in dfs_cleaned[1:]:
-        merged = pd.merge(merged, df, on=["code", "year"], how="outer")
+        merged = pd.merge(merged, df, on=["code", "year"], how="left")
 
     # --- Restore entity column from the master mapping ---
     merged["entity"] = merged["code"].map(code_to_entity)
@@ -70,6 +76,8 @@ def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, d
     # --- Reorder columns: entity, code, year first ---
     cols = ["entity", "code", "year"] + [c for c in merged.columns if c not in ["entity", "code", "year"]]
     merged = merged[cols]
+
+    merged = merged.fillna(0)  # Final fillna to ensure no missing values remain after merge
 
     # --- Sort by country and year ---
     merged = merged.sort_values(["entity", "year"]).reset_index(drop=True)
@@ -88,6 +96,7 @@ def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, d
 
     # Fix known ISO_A3 encoding issues in Natural Earth shapefile (e.g. France = -99)
     gdf_clean["ISO_A3"] = gdf_clean["ISO_A3"].replace("-99", pd.NA)
+
 
     # Merge world geometries with our dataset using ISO A3 country code
     merged_geo = gdf_clean.merge(merged, left_on="ISO_A3", right_on="code", how="left")
