@@ -175,16 +175,16 @@ def show_linegraph(processor, column_name="red-list-index"):
 
 
 def draw_chloropleth_map(gdf,column_name):
-
-
-    filtered_gdf = gdf[gdf[column_name].fillna(0)]
-
-
-    year = filtered_gdf["year"].max()
-
-    st.write(f"This map shows the data for the indicator {column_name} for the year {year}. You can see the distribution of this indicator across different countries. Darker colors indicate higher values, while lighter colors indicate lower values. Click on a country to see more details in the histogram below.")
-
+    # Get the latest year available
+    year = gdf["year"].max()
+    
+    # Filter for that year - includes countries with NaN values in column_name
     filtered_gdf = gdf[gdf['year'] == year]
+
+    st.write(f"This map shows the data for the indicator {column_name} for the year {year}. 
+             You can see the distribution of this indicator across different countries. 
+             Darker colors indicate higher values, while lighter colors indicate lower values. 
+             Countries with no data are shown in gray. Click on a country to see more details in the histogram below.")
 
     # print(f"Drawing map for column: {column_name} (Year: {year})")
     # print(filtered_gdf[column_name].head())
