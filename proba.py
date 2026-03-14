@@ -12,3 +12,4 @@ print(lat_lon_to_tile(48.8584, 2.2945, 15))  # Eiffel Tower
 #Get the real `x, y` output, then plug into:
 
 # https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/{y}/{x}
+# https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/11272/16592
