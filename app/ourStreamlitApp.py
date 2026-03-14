@@ -166,7 +166,7 @@ def show_linegraph(processor, column_name="red-list-index"):
         st.pyplot(fig)
 
     except Exception as e:
-        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         st.error(f"Error: {e}")
 
 
@@ -182,8 +182,8 @@ def draw_chloropleth_map(gdf,column_name):
 
     filtered_gdf = gdf[gdf['year'] == year]
 
-    print(f"Drawing map for column: {column_name} (Year: {year})")
-    print(filtered_gdf[column_name].head())
+    # print(f"Drawing map for column: {column_name} (Year: {year})")
+    # print(filtered_gdf[column_name].head())
     
     fig = px.choropleth(
         filtered_gdf,

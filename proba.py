@@ -6,7 +6,7 @@ def lat_lon_to_tile(lat, lon, zoom):
     y = int((1 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2 * n)
     return x, y
 
-print(lat_lon_to_tile(48.8584, 2.2945, 15))  # Eiffel Tower
+# print(lat_lon_to_tile(48.8584, 2.2945, 15))  # Eiffel Tower
 
 
 #Get the real `x, y` output, then plug into:
