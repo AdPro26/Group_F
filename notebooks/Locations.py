@@ -4,6 +4,10 @@ import math
 import requests
 from PIL import Image
 from io import BytesIO
+import yaml
+
+with open("../models.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
 ESRI_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 
@@ -64,8 +68,8 @@ for m in monuments:
     download_area(
         lat=m["lat"],
         lon=m["lon"],
-        zoom=16,           # 16 = good detail for landmarks
-        tiles_around=1,    # 3x3 grid
+        zoom=config["image_settings"]["zoom"],
+        tiles_around=config["image_settings"]["tiles_around"],
         save_path=f"images/{m['name']}.png"
     )
 

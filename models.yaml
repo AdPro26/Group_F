@@ -1,0 +1,15 @@
+image_settings:
+  zoom: 16
+  tiles_around: 1
+
+image_analysis:
+  model: "llava:7b"
+  prompt: "Describe in detail what you see in this satellite image."
+  max_tokens: 500
+  temperature: 0.3
+
+text_analysis:
+  model: "llama3:8b"
+  prompt: "Based on the following satellite image description, is there any environmental danger present? Answer Y or N followed by a brief explanation."
+  max_tokens: 200
+  temperature: 0.1
