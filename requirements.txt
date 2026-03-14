@@ -1,0 +1,13 @@
+streamlit
+pandas
+geopandas
+matplotlib
+numpy
+plotly
+requests
+pycountry
+pydantic
+pillow
+ollama
+pyyaml
+pytest
