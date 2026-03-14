@@ -11,7 +11,7 @@ import pycountry
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from notebooks.DataProcessor import ForestDataProcessor
-from notebooks.ImageDownloader import download_esri_image
+from notebooks.Locations import download_area, analyse_image, analyse_text, already_in_csv, save_to_csv, config
 
 import plotly.express as px
 
@@ -243,36 +243,114 @@ elif page == "New Page":
 
 elif page == "AI Image Analysis":
     st.header("🛰️ AI Image Analysis")
-    st.write("Select geographical coordinates and zoom level to download satellite imagery from ESRI World Imagery.")
-    
-    # Create three columns for latitude, longitude, zoom
+    st.write("Select geographical coordinates and zoom level to download and analyse satellite imagery.")
+
     col1, col2, col3 = st.columns(3)
-    
     with col1:
         latitude = st.slider("Latitude", min_value=-90.0, max_value=90.0, value=0.0, step=0.1)
-    
     with col2:
         longitude = st.slider("Longitude", min_value=-180.0, max_value=180.0, value=0.0, step=0.1)
-    
     with col3:
         zoom = st.slider("Zoom Level", min_value=1, max_value=18, value=10, step=1)
-    
-    # Display current coordinates
+
     st.info(f"📍 Current coordinates: Lat {latitude:.2f}, Lon {longitude:.2f}, Zoom {zoom}")
-    
-    # Download button
-    if st.button("📥 Download Image", use_container_width=True):
-        with st.spinner("Downloading image from ESRI..."):
-            success, filepath, message = download_esri_image(latitude, longitude, zoom)
-            
-            if success:
-                st.success(f"✅ {message}")
-                # Display the downloaded image
-                try:
-                    from PIL import Image
-                    img = Image.open(filepath)
-                    st.image(img, caption=f"ESRI Satellite Image - Lat {latitude:.2f}, Lon {longitude:.2f}, Zoom {zoom}")
-                except Exception as e:
-                    st.error(f"Error displaying image: {str(e)}")
+
+    if st.button("🔍 Download & Analyse", use_container_width=True):
+        from datetime import datetime
+        from PIL import Image as PILImage
+
+        tiles_around  = config["image_settings"]["tiles_around"]
+        image_model   = config["image_analysis"]["model"]
+        image_prompt  = config["image_analysis"]["prompt"]
+        text_model    = config["text_analysis"]["model"]
+        text_prompt   = config["text_analysis"]["prompt"]
+
+        BASE_DIR  = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        save_path = os.path.join(BASE_DIR, "images", f"tile_{latitude:.4f}_{longitude:.4f}_{zoom}.png")
+
+        # ── Check cache ────────────────────────────────────────────────────────
+        cached = already_in_csv(latitude, longitude, zoom)
+
+        if cached:
+            st.info("📦 Loaded from cache — skipping AI pipeline.")
+            col_img, col_desc = st.columns(2)
+            with col_img:
+                st.subheader("🖼️ Satellite Image")
+                if os.path.exists(save_path):
+                    st.image(PILImage.open(save_path), use_container_width=True)
+                else:
+                    st.warning("Cached image file not found on disk.")
+            with col_desc:
+                st.subheader("📝 Image Description")
+                st.write(cached["image_description"])
+
+            st.divider()
+            st.subheader("🌍 Environmental Risk Assessment")
+            if cached["danger"] == "Y":
+                st.error("## ⚠️ ENVIRONMENTAL RISK DETECTED")
             else:
-                st.error(f"❌ {message}")
+                st.success("## ✅ No significant environmental risk detected")
+            with st.expander("See full assessment"):
+                st.write(cached["text_description"])
+
+        else:
+            # ── Step 1: Download image ─────────────────────────────────────────
+            with st.spinner("Downloading satellite image from ESRI..."):
+                try:
+                    download_area(latitude, longitude, zoom, tiles_around, save_path)
+                    download_ok = True
+                except Exception as e:
+                    st.error(f"❌ Failed to download image: {e}")
+                    download_ok = False
+
+            if download_ok:
+                # ── Step 2: Image + description side by side ───────────────────
+                col_img, col_desc = st.columns(2)
+                with col_img:
+                    st.subheader("🖼️ Satellite Image")
+                    st.image(PILImage.open(save_path),
+                             caption=f"Lat {latitude:.2f}, Lon {longitude:.2f}, Zoom {zoom}",
+                             use_container_width=True)
+
+                description = None
+                with col_desc:
+                    st.subheader("📝 Image Description")
+                    with st.spinner(f"Describing image with {image_model}..."):
+                        try:
+                            description = analyse_image(save_path, image_model, image_prompt)
+                            st.write(description)
+                        except Exception as e:
+                            st.error(f"Image description failed: {e}")
+
+                # ── Step 3: Risk assessment below both ────────────────────────
+                if description:
+                    st.divider()
+                    st.subheader("🌍 Environmental Risk Assessment")
+                    with st.spinner(f"Assessing environmental risk with {text_model}..."):
+                        try:
+                            risk_text = analyse_text(description, text_model, text_prompt)
+                            is_danger = "Y" in risk_text[:5]
+
+                            if is_danger:
+                                st.error("## ⚠️ ENVIRONMENTAL RISK DETECTED")
+                            else:
+                                st.success("## ✅ No significant environmental risk detected")
+
+                            with st.expander("See full assessment"):
+                                st.write(risk_text)
+
+                            save_to_csv({
+                                "timestamp":         datetime.now().isoformat(),
+                                "latitude":          latitude,
+                                "longitude":         longitude,
+                                "zoom":              zoom,
+                                "image_description": description,
+                                "image_prompt":      image_prompt,
+                                "image_model":       image_model,
+                                "text_description":  risk_text,
+                                "text_prompt":       text_prompt,
+                                "text_model":        text_model,
+                                "danger":            "Y" if is_danger else "N",
+                            })
+                        except Exception as e:
+                            st.error(f"Risk assessment failed: {e}")

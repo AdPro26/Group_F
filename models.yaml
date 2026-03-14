@@ -3,9 +3,9 @@ image_settings:
   tiles_around: 1
 
 image_analysis:
-  model: "llava:7b"
+  model: "moondream"
   prompt: "Describe in detail what you see in this satellite image."
-  max_tokens: 500
+  max_tokens: 150
   temperature: 0.3
 
 text_analysis:

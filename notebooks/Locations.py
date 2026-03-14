@@ -63,8 +63,10 @@ def analyse_image(image_path, model, prompt):
     image_data = base64.b64encode(Path(image_path).read_bytes()).decode("utf-8")
     response = ollama.chat(
         model=model,
-        messages=[{"role": "user", "content": prompt, "images": [image_data]}]
+        messages=[{"role": "user", "content": prompt, "images": [image_data]}],
+        options={"num_predict": 150, "temperature": 0.3}
     )
+
     return response.message.content.strip()
 
 def analyse_text(text, model, prompt):
@@ -106,47 +108,37 @@ text_model = config["text_analysis"]["model"]
 text_prompt = config["text_analysis"]["prompt"]
 
 # ── Monuments ─────────────────────────────────────────────────────────────────
-monuments = [
+if __name__ == "__main__":
+ monuments = [
     {"name": "roman_colosseum",  "lat": 41.8902,  "lon": 12.4922},
     {"name": "machu_picchu",     "lat": -13.1631, "lon": -72.5450},
     {"name": "great_wall_china", "lat": 40.4319,  "lon": 116.5704},
     {"name": "pyramids_of_giza", "lat": 29.9792,  "lon": 31.1342},
     {"name": "angkor_wat",       "lat": 13.4125,  "lon": 103.8670},
-]
+ ]
 
-for m in monuments:
-    print(f"\nProcessing: {m['name']}...")
+ for m in monuments:
+     existing = already_in_csv(m["lat"], m["lon"], zoom)
+     if existing:
+         continue
 
-    existing = already_in_csv(m["lat"], m["lon"], zoom)
-    if existing:
-        print(existing)
-        continue
+     save_path = os.path.join(BASE_DIR, "images", f"{m['name']}.png")
+     download_area(m["lat"], m["lon"], zoom, tiles_around, save_path)
 
-    save_path = os.path.join(BASE_DIR, "images", f"{m['name']}.png")
-    download_area(m["lat"], m["lon"], zoom, tiles_around, save_path)
+     image_desc = analyse_image(save_path, image_model, image_prompt)
+     text_desc = analyse_text(image_desc, text_model, text_prompt)
 
-    print("  → Analysing image...")
-    image_desc = analyse_image(save_path, image_model, image_prompt)
-    print(f"  → Image description: {image_desc[:80]}...")
-
-    print("  → Analysing text...")
-    text_desc = analyse_text(image_desc, text_model, text_prompt)
-    print(f"  → Danger assessment: {text_desc[:80]}...")
-
-    row = {
-        "timestamp": datetime.now().isoformat(),
-        "latitude": m["lat"],
-        "longitude": m["lon"],
-        "zoom": zoom,
-        "image_description": image_desc,
-        "image_prompt": image_prompt,
-        "image_model": image_model,
-        "text_description": text_desc,
-        "text_prompt": text_prompt,
-        "text_model": text_model,
-        "danger": "Y" if "Y" in text_desc[:5] else "N"
-    }
-    save_to_csv(row)
-    print(f"  → Saved to database.")
-
-print("\nDone!")
+     row = {
+         "timestamp": datetime.now().isoformat(),
+         "latitude": m["lat"],
+         "longitude": m["lon"],
+         "zoom": zoom,
+         "image_description": image_desc,
+         "image_prompt": image_prompt,
+         "image_model": image_model,
+         "text_description": text_desc,
+         "text_prompt": text_prompt,
+         "text_model": text_model,
+         "danger": "Y" if "Y" in text_desc[:5] else "N"
+     }
+     save_to_csv(row)
