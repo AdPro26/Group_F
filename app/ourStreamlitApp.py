@@ -177,7 +177,7 @@ def show_linegraph(processor, column_name="red-list-index"):
 def draw_chloropleth_map(gdf,column_name):
 
 
-    filtered_gdf = gdf[gdf[column_name].notna()]
+    filtered_gdf = gdf[gdf[column_name].fillna(0)]
 
 
     year = filtered_gdf["year"].max()
