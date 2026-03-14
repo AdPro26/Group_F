@@ -4,21 +4,21 @@ import subprocess
 import time
 from pathlib import Path
 
-OLLAMA_EXE = r"C:\Users\Petra\AppData\Local\Programs\Ollama\ollama.exe"
 
 def ensure_ollama_running():
     try:
         ollama.list()
-    except ConnectionError:
+    except Exception:
         print("Starting Ollama...")
-        subprocess.Popen([OLLAMA_EXE, "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(4)
 
-def describe_image(image_path: str, model: str = "llava") -> str:
+
+def describe_image(image_path: str, model: str = "moondream") -> str:
     ensure_ollama_running()
 
-    # Pull model if missing
-    if not any(model in m.model for m in ollama.list().models):
+    available_models = [m.model for m in ollama.list().models]
+    if not any(model in m for m in available_models):
         print(f"Pulling {model}...")
         ollama.pull(model)
 
