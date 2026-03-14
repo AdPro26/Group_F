@@ -6,7 +6,8 @@ from PIL import Image
 from io import BytesIO
 import yaml
 
-with open("../models.yaml", "r") as f:
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+with open(os.path.join(BASE_DIR, "models.yaml"), "r") as f:
     config = yaml.safe_load(f)
 
 ESRI_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
