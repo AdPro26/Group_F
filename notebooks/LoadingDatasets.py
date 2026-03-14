@@ -62,37 +62,36 @@ def load_all_data(download_dir: str | Path = "downloads") -> tuple:
         data_path = download_dir / data_url.split("?")[0].split("/")[-1]
         metadata_path = download_dir / metadata_url.split("?")[0].split("/")[-1]
 
-        if not data_path.exists():
+        try:
+            dataframes_list.append(pd.read_csv(data_path))
+        except FileNotFoundError:
             download_file(data_url, data_path)
-        else:
-            # print(f"  Skipping (exists): {data_path.name}")
+            dataframes_list.append(pd.read_csv(data_path))
 
-        if not metadata_path.exists():
+        try:
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                metadata_list.append(json.load(f))
+        except FileNotFoundError:
             download_metadata(metadata_url, metadata_path)
-        else:
-            # print(f"  Skipping (exists): {metadata_path.name}")
-
-        dataframes_list.append(pd.read_csv(data_path))
-        with open(metadata_path, "r", encoding="utf-8") as f:
-            metadata_list.append(json.load(f))
-
-    # print("✅ All datasets loaded successfully.")
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                metadata_list.append(json.load(f))
 
     # --- Shapefile ---
     shapefile_zip_path = download_dir / "ne_110m_admin_0_countries.zip"
     shapefile_dir = download_dir / "ne_110m_admin_0_countries"
     shapefile_path = shapefile_dir / "ne_110m_admin_0_countries.shp"
 
-    if not shapefile_dir.exists():
-        if not shapefile_zip_path.exists():
+    try:
+        gdf = gpd.read_file(shapefile_path)
+    except Exception:
+        try:
+            zipfile.ZipFile(shapefile_zip_path)
+        except (FileNotFoundError, zipfile.BadZipFile):
             download_file(SHAPEFILE_URL, shapefile_zip_path)
         with zipfile.ZipFile(shapefile_zip_path, "r") as zip_ref:
             zip_ref.extractall(shapefile_dir)
-        # print("  Shapefile extracted.")
-    else:
-        # print("  Skipping (exists): shapefile directory")
-
-    gdf = gpd.read_file(shapefile_path)
+        gdf = gpd.read_file(shapefile_path)
     # print("✅ Shapefile loaded.")
 
     return dataframes_list, metadata_list, gdf
+#nini
