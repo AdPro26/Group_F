@@ -286,7 +286,7 @@ elif page == "AI Image Analysis":
 
             st.divider()
             st.subheader("🌍 Environmental Risk Assessment")
-            if cached["danger"] == "Y":
+            if cached.get("danger", "N") == "Y":
                 st.error("## ⚠️ ENVIRONMENTAL RISK DETECTED")
             else:
                 st.success("## ✅ No significant environmental risk detected")

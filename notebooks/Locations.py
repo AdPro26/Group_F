@@ -64,7 +64,8 @@ def analyse_image(image_path, model, prompt):
     response = ollama.chat(
         model=model,
         messages=[{"role": "user", "content": prompt, "images": [image_data]}],
-        options={"num_predict": 150, "temperature": 0.3}
+        options={"num_predict": config["image_analysis"]["max_tokens"],
+                 "temperature": config["image_analysis"]["temperature"]}
     )
 
     return response.message.content.strip()
@@ -77,7 +78,9 @@ def analyse_text(text, model, prompt):
         ollama.pull(model)
     response = ollama.chat(
         model=model,
-        messages=[{"role": "user", "content": f"{prompt}\n\n{text}"}]
+        messages=[{"role": "user", "content": f"{prompt}\n\n{text}"}],
+        options={"num_predict": config["text_analysis"]["max_tokens"],
+                 "temperature": config["text_analysis"]["temperature"]}
     )
     return response.message.content.strip()
 

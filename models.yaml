@@ -3,13 +3,13 @@ image_settings:
   tiles_around: 1
 
 image_analysis:
-  model: "moondream"
-  prompt: "Describe in detail what you see in this satellite image."
-  max_tokens: 150
+  model: "llava:7b"
+  prompt: "Describe this satellite image focusing on: land use, vegetation coverage, signs of deforestation or forest clearing, human infrastructure such as roads or buildings, mining activity, and any visible environmental degradation."
+  max_tokens: 300
   temperature: 0.3
 
 text_analysis:
-  model: "llama3:8b"
-  prompt: "Based on the following satellite image description, is there any environmental danger present? Answer Y or N followed by a brief explanation."
-  max_tokens: 200
+  model: "llama3.2:3b"
+  prompt: "You are an environmental analyst. Given this satellite image description, detect signs of HUMAN-CAUSED environmental damage. Key indicators include: grid-like roads cutting through forest, cleared rectangular fields surrounded by dense forest (deforestation), bare soil patches replacing vegetation, mining pits, or industrial pollution. Respond strictly in this format: 'Y: [reason]' or 'N: [reason]'. One sentence only. No other text."
+  max_tokens: 150
   temperature: 0.1
