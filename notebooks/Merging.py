@@ -1,10 +1,11 @@
 import pandas as pd
 import geopandas as gpd
-from notebooks.LoadingDatasets import load_all_data 
+from pathlib import Path
+
 
 # --- Fase 1: Load all datasets and merge them into a single DataFrame ---
 
-def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame) -> pd.DataFrame:
+def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, download_dir: str | Path = "downloads") -> pd.DataFrame:
 
 
     DATASET_NAMES = [
@@ -96,7 +97,10 @@ def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame) -
     #print(merged_geo.head())
 
     # --- Save outputs ---
-    merged_geo.to_file("merged_output.geojson", driver="GeoJSON")
-    merged_geo.to_csv("merged_dataset.csv", index=False)
+    download_dir = Path(download_dir)
+    download_dir.mkdir(exist_ok=True)
+    merged_geo.to_file(download_dir / "merged_output.geojson", driver="GeoJSON")
+    merged_geo.to_csv(download_dir / "merged_dataset.csv", index=False)
 
     return merged_geo
+
