@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import geopandas as gpd
 from pathlib import Path
@@ -5,6 +7,10 @@ from typing import Optional
 from typing import Optional
 from pydantic import BaseModel, field_validator
 from pydantic.functional_validators import field_validator
+import sys 
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 
 from notebooks.LoadingDatasets import load_all_data
@@ -76,7 +82,7 @@ class ForestDataProcessor:
         
         self.merged_dataframe = df
 
-        
+    '''      
 
         # Named DataFrame attributes — one per dataset
         self.annual_change_df: Optional[pd.DataFrame] = None
@@ -130,6 +136,8 @@ class ForestDataProcessor:
         self.annual_deforestation_df = dataframes[1]
         self.terrestrial_protected_df = dataframes[2]
         self.forest_share_df = dataframes[3]
+
+    
 
         # Function 2 — merge with map if a path was provided
       # if map_path is not None:
@@ -277,3 +285,4 @@ class ForestDataProcessor:
 
         # Now .sort_values(by=...) will work because 'entity' and 'year' exist!
         return result_df.sort_values(by=["entity", "year"])
+    '''

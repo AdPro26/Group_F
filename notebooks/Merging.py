@@ -105,11 +105,71 @@ def do_the_merging(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, d
     #print(f"\n✅ Geo merge complete: {merged_geo.shape[0]} rows, {merged_geo.shape[1]} columns")
     #print(merged_geo.head())
 
+
+
+    # --- Fase 3: Cleaning and check ---
+
+    indicator_cols = [c for c in merged_geo.columns if c not in ["NAME", "ISO_A3", "geometry", "entity", "code", "year"]]
+
+    # For each country, keep the most recent non-zero value per indicator column
+    records = []
+    for iso, group in merged_geo.groupby("ISO_A3"):
+        row = {
+            "ISO_A3": iso,
+            "entity": group["entity"].iloc[0],
+            "NAME": group["NAME"].iloc[0],
+        }
+        for col in indicator_cols:
+            valid = group[group[col] != 0][["year", col]].dropna()
+            if not valid.empty:
+                latest = valid.loc[valid["year"].idxmax()]
+                row[col] = latest[col]
+                row[f"{col}_year"] = int(latest["year"])
+            else:
+                row[col] = 0
+                row[f"{col}_year"] = None
+        records.append(row)
+
+    latest_df = pd.DataFrame(records)
+
+    # Replace any remaining NaN in indicator columns with 0
+    latest_df[indicator_cols] = latest_df[indicator_cols].fillna(0)
+
+    # --- Quick check: find missing countries vs world shapefile ---
+    all_world = gdf_clean[["ISO_A3", "NAME"]].dropna(subset=["ISO_A3"]).drop_duplicates("ISO_A3")
+    missing_isos = set(all_world["ISO_A3"]) - set(latest_df["ISO_A3"])
+
+    print(f"\n--- Fase 3 Check ---")
+    print(f"Countries in dataset: {len(latest_df)}")
+    print(f"Countries in world shapefile: {len(all_world)}")
+    print(f"Missing countries: {len(missing_isos)}")
+    if missing_isos:
+        missing_names = all_world[all_world["ISO_A3"].isin(missing_isos)][["ISO_A3", "NAME"]].values.tolist()
+        for iso, name in sorted(missing_names, key=lambda x: x[1]):
+            print(f"  - {name} ({iso})")
+
+    # Add missing countries as rows with 0 for all indicator columns
+    missing_rows = []
+    for _, world_row in all_world[all_world["ISO_A3"].isin(missing_isos)].iterrows():
+        row = {"ISO_A3": world_row["ISO_A3"], "entity": None, "NAME": world_row["NAME"]}
+        for col in indicator_cols:
+            row[col] = 0
+            row[f"{col}_year"] = "-"
+        missing_rows.append(row)
+
+    if missing_rows:
+        latest_df = pd.concat([latest_df, pd.DataFrame(missing_rows)], ignore_index=True)
+
+
+
+    
+
     # --- Save outputs ---
     download_dir = Path(download_dir)
     download_dir.mkdir(exist_ok=True)
-    merged_geo.to_file(download_dir / "merged_output.geojson", driver="GeoJSON")
-    merged_geo.to_csv(download_dir / "merged_dataset.csv", index=False)
+    latest_df.to_excel(download_dir / "latest_by_country.xlsx", index=False)
 
     return merged_geo
+
+
 

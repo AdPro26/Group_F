@@ -22,6 +22,12 @@ st.markdown("""
             padding-top: 1rem;
         }
     </style>
+    <script>
+        window.addEventListener('beforeunload', function (e) {
+            e.preventDefault();
+            e.returnValue = 'Are you sure you want to close this beautiful page?';
+        });
+    </script>
 """, unsafe_allow_html=True)
 
 st.title("Forest and Land Use Data Visualization")

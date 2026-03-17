@@ -30,7 +30,6 @@ def download_file(url: str, save_path: Path, timeout: int = 30) -> None:
     response = requests.get(url, timeout=timeout)
     response.raise_for_status()
     save_path.write_bytes(response.content)
-    # print(f"  Downloaded: {save_path.name}")
 
 
 def download_metadata(url: str, save_path: Path, timeout: int = 30) -> None:
@@ -38,7 +37,7 @@ def download_metadata(url: str, save_path: Path, timeout: int = 30) -> None:
     response.raise_for_status()
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(response.json(), f, indent=2)
-    # print(f"  Downloaded metadata: {save_path.name}")
+
 
 
 # --- Main Function ---
@@ -77,21 +76,23 @@ def load_all_data(download_dir: str | Path = "downloads") -> tuple:
                 metadata_list.append(json.load(f))
 
     # --- Shapefile ---
-    shapefile_zip_path = download_dir / "ne_110m_admin_0_countries.zip"
-    shapefile_dir = download_dir / "ne_110m_admin_0_countries"
-    shapefile_path = shapefile_dir / "ne_110m_admin_0_countries.shp"
+    shapefile_zip_path = download_dir / "countries.zip"
+    shapefile_dir = download_dir / "countries"
+    shapefile_path = shapefile_dir / "countries.shp"
 
-    try:
-        gdf = gpd.read_file(shapefile_path)
-    except Exception:
+    def _ensure_shapefile_zip(shapefile_zip_path):
         try:
             zipfile.ZipFile(shapefile_zip_path)
         except (FileNotFoundError, zipfile.BadZipFile):
             download_file(SHAPEFILE_URL, shapefile_zip_path)
+
+    try:
+        gdf = gpd.read_file(shapefile_path)
+    except Exception:
+        _ensure_shapefile_zip(shapefile_zip_path)
         with zipfile.ZipFile(shapefile_zip_path, "r") as zip_ref:
             zip_ref.extractall(shapefile_dir)
         gdf = gpd.read_file(shapefile_path)
-    # print("✅ Shapefile loaded.")
+
 
     return dataframes_list, metadata_list, gdf
-#nini
