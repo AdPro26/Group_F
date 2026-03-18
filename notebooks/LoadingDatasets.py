@@ -78,7 +78,7 @@ def load_all_data(download_dir: str | Path = "downloads") -> tuple:
     # --- Shapefile ---
     shapefile_zip_path = download_dir / "countries.zip"
     shapefile_dir = download_dir / "countries"
-    shapefile_path = shapefile_dir / "countries.shp"
+    shapefile_path = shapefile_dir / "ne_110m_admin_0_countries.shp"
 
     def _ensure_shapefile_zip(shapefile_zip_path):
         try:

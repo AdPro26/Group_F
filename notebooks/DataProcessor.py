@@ -1,5 +1,4 @@
 import os
-
 import pandas as pd
 import geopandas as gpd
 from pathlib import Path
@@ -11,10 +10,39 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from notebooks.Processing import load_all_data
+from notebooks.Processing import do_the_merging2
+from notebooks.Processing import clean_all_dataframes
+
+# --- Constants ---
+DATA_URLS = [
+    "https://ourworldindata.org/grapher/annual-change-forest-area.csv?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/annual-deforestation.csv?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/terrestrial-protected-areas.csv?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.csv?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/red-list-index.csv?v=1&csvType=full&useColumnShortNames=true",
+]
+
+METADATA_URLS = [
+    "https://ourworldindata.org/grapher/annual-change-forest-area.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/annual-deforestation.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/terrestrial-protected-areas.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+    "https://ourworldindata.org/grapher/red-list-index.metadata.json?v=1&csvType=full&useColumnShortNames=true",
+]
+
+SHAPEFILE_URL = "https://naturalearth.s3.amazonaws.com/110m_cultural/ne_110m_admin_0_countries.zip"
+
+DATASET_NAMES = [
+            "annual-change-forest_area",
+            "annual-deforestation",
+            "forest-area-as-share-of-land-area",
+            "terrestrial-protected-areas",
+            "red-list-index",
+        ]
 
 
-from notebooks.LoadingDatasets import load_all_data
-from notebooks.Merging_02 import do_the_merging2
+DOWNLOAD_DIR = Path(__file__).parent.parent / "downloads"
 
 class CountryInfo(BaseModel):
     """Pydantic model to validate country information."""
@@ -40,27 +68,6 @@ class CountryInfo(BaseModel):
 class ForestDataProcessor:
     """Class to process all required datasets from Our World in Data."""
 
-        # --- Constants ---
-    DATA_URLS = [
-        "https://ourworldindata.org/grapher/annual-change-forest-area.csv?v=1&csvType=full&useColumnShortNames=true",
-        "https://ourworldindata.org/grapher/annual-deforestation.csv?v=1&csvType=full&useColumnShortNames=true",
-        "https://ourworldindata.org/grapher/terrestrial-protected-areas.csv?v=1&csvType=full&useColumnShortNames=true",
-        "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.csv?v=1&csvType=full&useColumnShortNames=true",
-        "https://ourworldindata.org/grapher/red-list-index.csv?v=1&csvType=full&useColumnShortNames=true",
-    ]
-
-    METADATA_URLS = [
-        "https://ourworldindata.org/grapher/annual-change-forest-area.metadata.json?v=1&csvType=full&useColumnShortNames=true",
-        "https://ourworldindata.org/grapher/annual-deforestation.metadata.json?v=1&csvType=full&useColumnShortNames=true",
-        "https://ourworldindata.org/grapher/terrestrial-protected-areas.metadata.json?v=1&csvType=full&useColumnShortNames=true",
-        "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.metadata.json?v=1&csvType=full&useColumnShortNames=true",
-        "https://ourworldindata.org/grapher/red-list-index.metadata.json?v=1&csvType=full&useColumnShortNames=true",
-    ]
-
-    SHAPEFILE_URL = "https://naturalearth.s3.amazonaws.com/110m_cultural/ne_110m_admin_0_countries.zip"
-
-    DOWNLOAD_DIR: Path = Path(__file__).parent.parent / "downloads"
-
     def __init__(self) -> None:
         """
         Initializes the ForestDataProcessor.
@@ -77,34 +84,15 @@ class ForestDataProcessor:
         self.raw_dataframes: dict[str, pd.DataFrame] = {}
         self.metadata: list[dict] = []
 
-        DATASET_NAMES = [
-            "annual-change-forest_area",
-            "annual-deforestation",
-            "forest-area-as-share-of-land-area",
-            "terrestrial-protected-areas",
-            "red-list-index",
-        ]
+        dataframes, self.metadata, gdf = load_all_data(DOWNLOAD_DIR)
 
-        dataframes, self.metadata, gdf = load_all_data(self.DOWNLOAD_DIR)
+        raw_dataframes = clean_all_dataframes(dataframes, DATASET_NAMES)
+        self.raw_dataframes = raw_dataframes
 
-        # Build raw time-series DataFrames (cleaned, full history, one row per country/year)
-        for raw_df, name in zip(dataframes, DATASET_NAMES):
-            df_clean = raw_df.copy()
-            df_clean.columns = [c.lower().strip() for c in df_clean.columns]
-            df_clean = df_clean[df_clean["code"].notna() & (df_clean["code"].str.strip() != "")]
-            df_clean = df_clean[~df_clean["code"].str.contains("_", na=False)]
-            key_cols = ["entity", "code", "year"]
-            value_cols = [c for c in df_clean.columns if c not in key_cols]
-            if len(value_cols) == 1:
-                rename_map = {value_cols[0]: name}
-            else:
-                rename_map = {c: f"{name}_{i+1}" for i, c in enumerate(value_cols)}
-            df_clean = df_clean.rename(columns=rename_map)
-            self.raw_dataframes[name] = df_clean
+        merged_dataframe = do_the_merging2(dataframes, gdf, DOWNLOAD_DIR)
+        self.merged_dataframe = merged_dataframe
 
-        self.merged_dataframe = do_the_merging2(dataframes, gdf, self.DOWNLOAD_DIR)
-
-    '''      
+         
 
         # Named DataFrame attributes — one per dataset
         self.annual_change_df: Optional[pd.DataFrame] = None
@@ -154,10 +142,11 @@ class ForestDataProcessor:
               Empty for most rows.
         """
 
-        self.annual_change_df = dataframes[0]
-        self.annual_deforestation_df = dataframes[1]
-        self.terrestrial_protected_df = dataframes[2]
-        self.forest_share_df = dataframes[3]
+        self.annual_change_df = self.merged_dataframe["annual-change-forest_area"]
+        self.annual_deforestation_df = self.merged_dataframe["annual-deforestation"]
+        self.terrestrial_protected_df = self.merged_dataframe["terrestrial-protected-areas"]
+        self.forest_share_df = self.merged_dataframe["forest-area-as-share-of-land-area"]
+        self.red_list_index = self.merged_dataframe["red-list-index"]
 
     
 
@@ -307,17 +296,4 @@ class ForestDataProcessor:
 
         # Now .sort_values(by=...) will work because 'entity' and 'year' exist!
         return result_df.sort_values(by=["entity", "year"])
-    '''
-
-    def get_red_list_index(self, entities: list[str]) -> pd.DataFrame:
-        if "red-list-index" not in self.raw_dataframes:
-            raise RuntimeError("raw_dataframes is not loaded.")
-
-        df = self.raw_dataframes["red-list-index"]
-        mask = df["entity"].isin(entities)
-        result_df = df[mask][["entity", "year", "red-list-index"]].copy()
-
-        if result_df.empty:
-            raise ValueError(f"None of the entities {entities} were found.")
-
-        return result_df.sort_values(by=["entity", "year"])
+    

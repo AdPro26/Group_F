@@ -2,6 +2,7 @@ import pandas as pd
 import geopandas as gpd
 from pathlib import Path
 
+# this is Madda's function from Merging_02.py, moved here to avoid circular imports between DataProcessor and Processing
 
 def do_the_merging2(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, download_dir: str | Path = "downloads") -> dict[str, pd.DataFrame]:
 
