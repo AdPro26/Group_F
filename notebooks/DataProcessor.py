@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 
 from notebooks.LoadingDatasets import load_all_data
-from notebooks.Merging import do_the_merging
+from notebooks.Merging_02 import do_the_merging2
 
 class CountryInfo(BaseModel):
     """Pydantic model to validate country information."""
@@ -59,7 +59,7 @@ class ForestDataProcessor:
 
     SHAPEFILE_URL = "https://naturalearth.s3.amazonaws.com/110m_cultural/ne_110m_admin_0_countries.zip"
 
-    DOWNLOAD_DIR: Path = Path("downloads")
+    DOWNLOAD_DIR: Path = Path(__file__).parent.parent / "downloads"
 
     def __init__(self) -> None:
         """
@@ -73,14 +73,36 @@ class ForestDataProcessor:
                          If provided, all datasets are merged with the map geometry.
         """
         self.geo_dataframe: Optional[gpd.GeoDataFrame] = None
-        self.merged_dataframe: Optional[gpd.GeoDataFrame] = None
+        self.merged_dataframe: Optional[dict] = None
+        self.raw_dataframes: dict[str, pd.DataFrame] = {}
         self.metadata: list[dict] = []
 
-        dataframes, self.metadata,gdf = load_all_data(self.DOWNLOAD_DIR)
+        DATASET_NAMES = [
+            "annual-change-forest_area",
+            "annual-deforestation",
+            "forest-area-as-share-of-land-area",
+            "terrestrial-protected-areas",
+            "red-list-index",
+        ]
 
-        df = do_the_merging(dataframes, gdf, self.DOWNLOAD_DIR)
-        
-        self.merged_dataframe = df
+        dataframes, self.metadata, gdf = load_all_data(self.DOWNLOAD_DIR)
+
+        # Build raw time-series DataFrames (cleaned, full history, one row per country/year)
+        for raw_df, name in zip(dataframes, DATASET_NAMES):
+            df_clean = raw_df.copy()
+            df_clean.columns = [c.lower().strip() for c in df_clean.columns]
+            df_clean = df_clean[df_clean["code"].notna() & (df_clean["code"].str.strip() != "")]
+            df_clean = df_clean[~df_clean["code"].str.contains("_", na=False)]
+            key_cols = ["entity", "code", "year"]
+            value_cols = [c for c in df_clean.columns if c not in key_cols]
+            if len(value_cols) == 1:
+                rename_map = {value_cols[0]: name}
+            else:
+                rename_map = {c: f"{name}_{i+1}" for i, c in enumerate(value_cols)}
+            df_clean = df_clean.rename(columns=rename_map)
+            self.raw_dataframes[name] = df_clean
+
+        self.merged_dataframe = do_the_merging2(dataframes, gdf, self.DOWNLOAD_DIR)
 
     '''      
 
@@ -286,3 +308,16 @@ class ForestDataProcessor:
         # Now .sort_values(by=...) will work because 'entity' and 'year' exist!
         return result_df.sort_values(by=["entity", "year"])
     '''
+
+    def get_red_list_index(self, entities: list[str]) -> pd.DataFrame:
+        if "red-list-index" not in self.raw_dataframes:
+            raise RuntimeError("raw_dataframes is not loaded.")
+
+        df = self.raw_dataframes["red-list-index"]
+        mask = df["entity"].isin(entities)
+        result_df = df[mask][["entity", "year", "red-list-index"]].copy()
+
+        if result_df.empty:
+            raise ValueError(f"None of the entities {entities} were found.")
+
+        return result_df.sort_values(by=["entity", "year"])

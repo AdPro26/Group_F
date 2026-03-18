@@ -48,15 +48,21 @@ def load_processor():
 
 processor = load_processor()
 
-df = processor.merged_dataframe
-
-#print(df.head()) 
-
 @st.cache_resource
 def load_choropleth_fig():
-    fig = px.choropleth(df, geojson=df.geometry, locations=df.index, color_continuous_scale="Viridis", projection="natural earth")
+    df_main = processor.merged_dataframe["forest-area-as-share-of-land-area"]
+    df_filtered = df_main[df_main["forest-area-as-share-of-land-area"] != 0]
+    fig = px.choropleth(
+        df_filtered,
+        locations="ISO_A3",
+        locationmode="ISO-3",
+        color="forest-area-as-share-of-land-area",
+        color_continuous_scale="Viridis",
+        projection="natural earth",
+        hover_name="NAME",
+    )
     fig.update_geos(
-        fitbounds="locations", 
+        fitbounds="locations",
         visible=False,
         center={"lat": 20, "lon": 0}
     )
@@ -99,11 +105,8 @@ if "page" not in st.session_state:
 page = st.session_state.page
 
 # ── Histogram ─────────────────────────────────────────────────────────────────
-def show_histogram(processor, column_name="annual-change-forest_area"):
-   # selected_country = st.session_state.get("selected_country", None)
-
+def show_histogram(df_raw, column_name="annual-change-forest_area"):
     st.header(f"Showing histogram for column: {column_name}")
-
 
     country = st.selectbox(
         "Select a country",
@@ -113,8 +116,7 @@ def show_histogram(processor, column_name="annual-change-forest_area"):
     st.markdown(f"Showing data for: **{country}**")
 
     try:
-        df = processor.merged_dataframe
-        country_df = df[df["entity"] == country].dropna(subset=[column_name, "year"])
+        country_df = df_raw[df_raw["entity"] == country].dropna(subset=[column_name, "year"])
 
         if country_df.empty:
             st.warning(f"No data found for '{country}'.")
@@ -180,38 +182,29 @@ def show_linegraph(processor, column_name="red-list-index"):
         st.error(f"Error: {e}")
 
 
-def draw_chloropleth_map(gdf, column_name):
+def draw_chloropleth_map(df, column_name):
+    # Each row is already the most recent year per country — no further filtering needed
+    filtered_df = df[df[column_name] != 0].copy()
 
-    print(gdf[gdf['ISO_A3']=='MNG'][column_name].head())
-    
+    st.write(
+        f"This map shows the most recent available data for **{column_name}**. "
+        "Darker colors indicate higher values, while lighter colors indicate lower values. "
+        "Countries with no data are shown in gray."
+    )
 
-    filtered_gdf = gdf[gdf[column_name].notna()]  # Filter out rows where the specified column is NaN
-
-    # Get the latest year available
-    year = filtered_gdf["year"].max()
-    
-    
-    # Filter for that year - includes countries with NaN values in column_name
-    filtered_gdf = filtered_gdf[filtered_gdf['year'] == year]
-
-
-
-    st.write(f"This map shows the data for the indicator {column_name} for the year {year}. You can see the distribution of this indicator across different countries. Darker colors indicate higher values, while lighter colors indicate lower values. Countries with no data are shown in gray.")
-    
-    # print(f"Drawing map for column: {column_name} (Year: {year})")
-    # print(filtered_gdf[column_name].head())
-    
     fig = px.choropleth(
-        filtered_gdf,
-        geojson=filtered_gdf.geometry,
-        locations=filtered_gdf.index,
+        filtered_df,
+        locations="ISO_A3",
+        locationmode="ISO-3",
         color=column_name,
-        color_continuous_scale='Plasma',
-        projection='natural earth'
+        color_continuous_scale="Plasma",
+        projection="natural earth",
+        hover_name="NAME",
+        hover_data={"year": True, column_name: True, "ISO_A3": False},
     )
 
     fig.update_geos(
-        fitbounds="locations", 
+        fitbounds="locations",
         visible=False,
         center={"lat": 20, "lon": 0}
     )
@@ -219,7 +212,7 @@ def draw_chloropleth_map(gdf, column_name):
         height=450,
         margin={"r":0,"t":0,"l":0,"b":0},
     )
-    
+
     st.plotly_chart(fig, width='stretch', key=f"map_{column_name}")
 
 
@@ -228,19 +221,19 @@ if page == "Main Page":
     st.plotly_chart(fig, width='stretch')
     st.write("Welcome! This big map is showing the latest available data. When you click on a page on the left, the chloropleth map will update to show the data for that specific indicator for the last year available. Scroll down on each page to see more detailed visualizations for each indicator.")
 elif page == "Anual Change in forest area":
-    draw_chloropleth_map(processor.merged_dataframe, "annual-change-forest_area")
-    show_histogram(processor, "annual-change-forest_area")
-elif page == "Annual deforestation":  
-    draw_chloropleth_map(processor.merged_dataframe, "annual-deforestation")
-    show_histogram(processor, "annual-deforestation")
+    draw_chloropleth_map(processor.merged_dataframe["annual-change-forest_area"], "annual-change-forest_area")
+    show_histogram(processor.raw_dataframes["annual-change-forest_area"], "annual-change-forest_area")
+elif page == "Annual deforestation":
+    draw_chloropleth_map(processor.merged_dataframe["annual-deforestation"], "annual-deforestation")
+    show_histogram(processor.raw_dataframes["annual-deforestation"], "annual-deforestation")
 elif page == "Share of land that is protected":
-    draw_chloropleth_map(processor.merged_dataframe, "forest-area-as-share-of-land-area")
-    show_histogram(processor, "forest-area-as-share-of-land-area")
+    draw_chloropleth_map(processor.merged_dataframe["forest-area-as-share-of-land-area"], "forest-area-as-share-of-land-area")
+    show_histogram(processor.raw_dataframes["forest-area-as-share-of-land-area"], "forest-area-as-share-of-land-area")
 elif page == "Terrestrial protected areas":
-    draw_chloropleth_map(processor.merged_dataframe, "terrestrial-protected-areas_1")
-    show_histogram(processor, "terrestrial-protected-areas_1")
+    draw_chloropleth_map(processor.merged_dataframe["terrestrial-protected-areas"], "terrestrial-protected-areas_1")
+    show_histogram(processor.raw_dataframes["terrestrial-protected-areas"], "terrestrial-protected-areas_1")
 elif page == "Red List Index":
-    draw_chloropleth_map(processor.merged_dataframe, "red-list-index")  
+    draw_chloropleth_map(processor.merged_dataframe["red-list-index"], "red-list-index")
     show_linegraph(processor, "red-list-index")
 elif page == "New Page":
     st.header("Welcome to the New Page!")
