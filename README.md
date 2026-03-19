@@ -39,13 +39,54 @@ Geospatial data from [Natural Earth](https://www.naturalearthdata.com/downloads/
 
 ---
 
+## Repository Structure
+
+```text
+Group_F/
+├── Project/                    # Assignment documentation
+│   ├── Part1.md                # Description of Part 1 assignment
+│   └── Part2.md                # Description of Part 2 assignment
+├── app/                        # Streamlit application
+│   ├── ourStreamlitApp.py      # Main app entry point
+│   ├── _pages/
+│   │   └── aiAnalysis.py       # AI image analysis page
+│   └── utils/
+│       └── charts.py           # Reusable chart/visualization functions
+├── database/                   # Cached AI analysis results
+│   └── images.csv              # Stores past image analyses to avoid re-runs
+├── downloads/                  # Downloaded environmental datasets
+│   ├── annual-change-forest-area.           # Annual forest area change data
+│   ├── annual-deforestation.                # Annual deforestation data
+│   ├── forest-area-as-share-of-land-area.   # Forest share of land data
+│   ├── terrestrial-protected-areas.         # Protected areas data
+│   ├── red-list-index.                      # Biodiversity Red List Index
+│   ├── all_world_countries.xlsx             # Country reference list
+│   └── countries/              # Natural Earth shapefiles for world map
+├── images/                     # Downloaded satellite images
+├── notebooks/                  # Data processing & pipeline scripts
+│   ├── DataProcessor.py        # Data loading and merging
+│   ├── ImageDownloader.py      # Satellite images download via APIs
+│   ├── Locations.py            # Coordinate handling & AI analysis calls
+│   └── Processing.py           # Data cleaning and transformation
+├── .gitignore
+├── LICENSE
+├── models.yaml                 # AI model configuration (vision + text models)
+├── README.md                   # Project documentation (this file)
+└── requirements.txt            # Python dependencies
+```
+--- 
+
 ## Installation & Setup
 
 ### Prerequisites
 - Python 3.10+
 - [Ollama](https://ollama.com) installed and running on your machine
+- see requirements.txt file (vorrei linkarlo al file che ho nella repository)
 
-### 1. Clone the repository
+### 1. Clone the repository  
+
+Install python in the file requirements you have the requirement and for the test 
+
 ```bash
 git clone https://github.com/AdPro26/Group_F.git
 cd Group_F
@@ -56,45 +97,23 @@ cd Group_F
 pip install -r requirements.txt
 ```
 
-### 3. Run the app
+### 3. Download the datasets
+
+```bash
+python -c from notebooks.Processing import load_all_data; load_all_data('downloads')
+
+```
+
+### 4. Run the app
 ```bash
 streamlit run app/ourStreamlitApp.py
 ```
 
 > The app will automatically pull the required AI models (`llava:7b`, `llama3.2:3b`) via Ollama on first use if they are not already installed.
 
-### 4. Run tests
+### 5. Run tests
 ```bash
 pytest
-```
-
----
-
-## Repository Structure
-
-```text
-Group_F/
-├── Project/               # Assignment documentation
-│   ├── Part1.md           # Description of Part 1 assignment
-│   └── Part2.md           # Description of Part 2 assignment
-├── app/                   # Streamlit application
-│   └── ourStreamlitApp.py
-├── database/              # Cached AI analysis results
-│   └── images.csv
-├── downloads/             # Downloaded environmental datasets
-├── images/                # Downloaded satellite images
-├── notebooks/             # Prototyping scripts
-│   ├── DataProcessor.py   # Data processing class
-│   ├── Locations.py       # Satellite image download & AI analysis
-│   └── LoadingDatasets.py
-├── tests/                 # Unit tests (pytest)
-│   ├── test_download_data.py
-│   └── test_merge_data2.py
-├── .gitignore
-├── LICENSE
-├── models.yaml            # AI model configuration
-├── README.md              # Project documentation (this file)
-└── main.py                # Main execution script
 ```
 
 ---
