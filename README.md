@@ -97,21 +97,14 @@ cd Group_F
 pip install -r requirements.txt
 ```
 
-### 3. Download the datasets
-
-```bash
-python -c from notebooks.Processing import load_all_data; load_all_data('downloads')
-
-```
-
-### 4. Run the app
+### 3. Run the app
 ```bash
 streamlit run app/ourStreamlitApp.py
 ```
 
 > The app will automatically pull the required AI models (`llava:7b`, `llama3.2:3b`) via Ollama on first use if they are not already installed.
 
-### 5. Run tests
+### 4. Run tests
 ```bash
 pytest
 ```
