@@ -132,8 +132,8 @@ def do_the_merging2(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, 
         df = df.fillna(0)
         df.columns = [c.lower().strip() for c in df.columns]
 
-        print(f"\n--- Processing: {name} ---")
-        print(df.isna().sum())
+        #print(f"\n--- Processing: {name} ---")
+        #print(df.isna().sum())
 
         # Remove rows where 'code' is missing or empty (e.g. continents, world aggregates)
         df = df[df["code"].notna() & (df["code"].str.strip() != "")]
@@ -190,13 +190,14 @@ def do_the_merging2(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, 
         # --- Check for missing countries vs world shapefile ---
         missing_isos = set(all_world["ISO_A3"]) - set(latest_df["ISO_A3"])
 
-        print(f"Countries in dataset: {len(latest_df)}")
-        print(f"Countries in world shapefile: {len(all_world)}")
-        print(f"Missing countries: {len(missing_isos)}")
+        #print(f"Countries in dataset: {len(latest_df)}")
+        #print(f"Countries in world shapefile: {len(all_world)}")
+        #print(f"Missing countries: {len(missing_isos)}")
         if missing_isos:
             missing_names = all_world[all_world["ISO_A3"].isin(missing_isos)][["ISO_A3", "NAME"]].values.tolist()
             for iso, wname in sorted(missing_names, key=lambda x: x[1]):
-                print(f"  - {wname} ({iso})")
+                #print(f"  - {wname} ({iso})")
+                pass
 
         # Add missing countries as rows with "-" year and 0 for all indicator columns
         missing_rows = []
@@ -212,7 +213,7 @@ def do_the_merging2(dataframes_list: list[pd.DataFrame], gdf: gpd.GeoDataFrame, 
         # --- Save output ---
         output_path = download_dir / f"{name}_merged.xlsx"
         latest_df.to_excel(output_path, index=False)
-        print(f"Saved: {output_path}")
+        #print(f"Saved: {output_path}")
 
         results[name] = latest_df
 

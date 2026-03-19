@@ -5,7 +5,7 @@ image_settings:
 image_analysis:
   model: "llava:7b"
   prompt: "Describe this satellite image focusing on: land use, vegetation coverage, signs of deforestation or forest clearing, human infrastructure such as roads or buildings, mining activity, and any visible environmental degradation."
-  max_tokens: 300
+  max_tokens: 150
   temperature: 0.3
 
 text_analysis:
