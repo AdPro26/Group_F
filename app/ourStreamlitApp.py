@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from notebooks.DataProcessor import ForestDataProcessor
 from utils.charts import draw_chloropleth_map, show_histogram, show_histogram_red_list_index
-from pages.aiAnalysis import render as render_ai
+from _pages.aiAnalysis import render as render_ai
 
 
 import plotly.express as px
