@@ -15,7 +15,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from notebooks.DataProcessor import ForestDataProcessor
 from utils.charts import draw_chloropleth_map, show_histogram, show_histogram_red_list_index
-from pages.aiAnalysis import render as render_ai
+from _pages.aiAnalysis import render as render_ai
+from _pages.memes import _build_layout as render_memes
 
 
 import plotly.express as px
@@ -79,12 +80,6 @@ def load_choropleth_fig():
 
 fig = load_choropleth_fig()
 
-#tiles_around  = config["image_settings"]["tiles_around"]
-#image_model   = config["image_analysis"]["model"]
-#image_prompt  = config["image_analysis"]["prompt"]
-#text_model    = config["text_analysis"]["model"]
-#text_prompt   = config["text_analysis"]["prompt"]
-
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -105,6 +100,8 @@ with st.sidebar:
         st.session_state.page = "Red List Index"
     if st.button("🛰️ AI Image Analysis", width='stretch'):
         st.session_state.page = "AI Image Analysis"
+    if st.button("🤪 Meme Generator", width='stretch'):
+        st.session_state.page = "Meme Generator"
 if "page" not in st.session_state:
     st.session_state.page = "Main Page"
 
@@ -138,4 +135,7 @@ elif page == "Red List Index":
 
 elif page == "AI Image Analysis":
     render_ai()
+
+elif page == "Meme Generator":
+    render_memes()
     

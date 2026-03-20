@@ -282,10 +282,11 @@ class ForestDataProcessor:
             
     def get_red_list_index(self, entities: list[str]) -> pd.DataFrame:
         if self.red_list_index is None:
-            print("red_list_index is None")
+            #print("red_list_index is None")
             raise RuntimeError("red_list_index is not loaded.")
         else:
-            print(self.red_list_index.head())
+            #print(self.red_list_index.head())
+            pass
 
         # Filter for the countries
         mask = self.red_list_index["entity"].isin(entities)
