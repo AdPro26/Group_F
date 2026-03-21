@@ -22,7 +22,7 @@ def _get_all_media_files() -> list[Path]:
     ]
 
 
-def _build_layout():
+def _render():
     """
     Builds the page layout with:
     - A 'Random Media Generator' button
@@ -79,4 +79,4 @@ def _build_layout():
 if __name__ == "__main__":
     st.set_page_config(page_title="Random Media", layout="wide")
     st.title("Random Media Generator")
-    _build_layout()
+    _render()
